@@ -36,6 +36,11 @@ jobs:
         run: |
           cp .env.example .env
           mysql -h 127.0.0.1 -uroot -pci-root-only -e "CREATE DATABASE cpdc_test; GRANT ALL ON cpdc_test.* TO 'cpdc'@'%';"
+      - name: MySQL in Aiven's default SQL mode (ANSI), as Render's database runs
+        if: matrix.db == 'mysql:8.4'
+        run: >
+          mysql -h 127.0.0.1 -uroot -pci-root-only -e "SET GLOBAL sql_mode =
+          'ANSI,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION,NO_ZERO_DATE,NO_ZERO_IN_DATE,STRICT_ALL_TABLES';"
       - run: composer install --working-dir=api --no-interaction --no-progress && composer audit --working-dir=api
       - run: npm ci
       - run: npm run lint

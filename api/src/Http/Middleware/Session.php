@@ -10,7 +10,8 @@ use Cpdc\Settings\Settings;
 use PDO;
 
 /**
- * Native PHP file sessions behind our own __Host- cookie. The user row is re-read on every request
+ * Native PHP sessions, stored in the database (DbSessionHandler), behind our own __Host- cookie. The user row is
+ * re-read on every request
  * (by id AND organisation), so a role change or deactivation applies at once.
  *
  * A session remembers how it was opened (`provider`): a LinkedIn session is valid only while the user's role is
@@ -37,25 +38,25 @@ final class Session
     ) {
     }
 
-    /** Session files must outlive the longest allowed session; real expiry is checked per request. */
+    private static ?DbSessionHandler $store = null;
+
+    /** Stored sessions must outlive the longest allowed session; real expiry is checked per request. */
     public static function gcSeconds(Settings $settings): int
     {
         return max($settings->int('session_absolute_hours') * 3600, $settings->int('session_idle_minutes') * 60);
     }
 
     /** Call once at startup, before any output: PHP refuses session ini changes afterwards. */
-    public static function configure(string $savePath, int $gcSeconds): void
+    public static function configure(PDO $pdo, int $gcSeconds): void
     {
-        if (!is_dir($savePath)) {
-            mkdir($savePath, 0700, true);
-        }
-        ini_set('session.save_path', $savePath);
+        self::$store = new DbSessionHandler($pdo, static fn (): int => time());
         ini_set('session.use_cookies', '0'); // we send our own __Host- cookie
         ini_set('session.use_only_cookies', '1');
         ini_set('session.use_strict_mode', '1');
         ini_set('session.use_trans_sid', '0');
         ini_set('session.cache_limiter', '');
         ini_set('session.gc_maxlifetime', (string) $gcSeconds);
+        session_set_save_handler(self::$store, true);
     }
 
     public static function cookie(string $id): string
@@ -69,17 +70,13 @@ final class Session
         return $name . '=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax';
     }
 
-    /** True when $id is a well-formed session id whose file exists. Never creates a file. */
+    /** True when $id is a well-formed id of a stored session. Never stores anything. */
     public static function exists(string $id): bool
     {
-        // session.save_path may carry "N;" or "N;MODE;" before the directory.
-        $path = (string) session_save_path();
-        $dir = substr($path, (int) strrpos(';' . $path, ';'));
-
-        return preg_match('/^[A-Za-z0-9,-]{22,256}$/D', $id) === 1 && is_file($dir . '/sess_' . $id);
+        return preg_match('/^[A-Za-z0-9,-]{22,128}$/D', $id) === 1 && self::$store !== null && self::$store->has($id);
     }
 
-    /** Destroys the session file of $id if it exists (logout, login rotation). Unknown ids create nothing. */
+    /** Destroys the stored session $id if it exists (logout, login rotation). Unknown ids create nothing. */
     public static function forget(string $id): void
     {
         if (!self::exists($id)) {
@@ -134,7 +131,7 @@ final class Session
     public function authenticate(Request $req): array
     {
         $id = $req->cookies[self::COOKIE] ?? '';
-        // Unknown id (forged or expired): refuse before session_start, so no file is ever created for it.
+        // Unknown id (forged or expired): refuse before session_start, so nothing is ever stored for it.
         if (!self::exists($id)) {
             throw self::unauthenticated();
         }

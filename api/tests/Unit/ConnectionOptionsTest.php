@@ -80,7 +80,11 @@ final class ConnectionOptionsTest extends TestCase
             $options = Connection::options($ca);
             self::assertSame(PDO::ERRMODE_EXCEPTION, $options[PDO::ATTR_ERRMODE]);
             self::assertFalse($options[PDO::ATTR_EMULATE_PREPARES]);
-            self::assertSame("SET time_zone = '+00:00'", $options[PDO::MYSQL_ATTR_INIT_COMMAND]);
+            self::assertSame(
+                "SET time_zone = '+00:00', sql_mode = '" . Connection::SQL_MODE . "'",
+                $options[PDO::MYSQL_ATTR_INIT_COMMAND]
+            );
+            self::assertStringNotContainsString('ANSI', Connection::SQL_MODE);
         }
     }
 }

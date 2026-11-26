@@ -31,7 +31,7 @@ try {
     Env::assertProdUrls();
     $pdo = Connection::fromEnv();
     $org = (int) Env::get('DEFAULT_ORGANISATION_ID');
-    Session::configure($storage . '/sessions', Session::gcSeconds(Settings::load($pdo, $org)));
+    Session::configure($pdo, Session::gcSeconds(Settings::load($pdo, $org)));
     $app = new App(App::routes(new Router()), fn () => $pdo, Env::get('APP_URL'), $storage, $org);
 } catch (\Throwable $e) {
     // Bootstrap failed (env, storage, database): generic 500 to the client, detail only in the log.

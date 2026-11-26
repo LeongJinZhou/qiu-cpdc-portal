@@ -3,7 +3,7 @@
 # Render's free plan has no disk, so storage (sessions, sign-in state, logs) is empty after every restart.
 set -eu
 
-for dir in sessions logs google; do
+for dir in logs google; do
     mkdir -p "$STORAGE_DIR/$dir"
 done
 chown -R www-data:www-data "$STORAGE_DIR"

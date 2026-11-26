@@ -20,5 +20,4 @@ $pdo = Connection::fromEnv();
 TestDb::reset($pdo, Env::get('DB_NAME'));
 
 // Before any output: PHP refuses session ini changes once output has started.
-$sessions = sys_get_temp_dir() . '/cpdc-test-sessions';
-Session::configure($sessions, Session::gcSeconds(Settings::load($pdo, 1)));
+Session::configure($pdo, Session::gcSeconds(Settings::load($pdo, 1)));

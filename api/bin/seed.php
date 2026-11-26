@@ -31,7 +31,7 @@ foreach (
     'logbook_review_link', 'logbook_entry', 'internship', 'showcase_tech', 'showcase_project', 'assessment_answer',
     'assessment_attempt', 'job_application', 'skill_rating', 'skill_assessment', 'learning_record', 'workshop_rsvp',
     'cv_document', 'career_path_progress', 'mentor_request', 'mentor_offer', 'network_profile', 'interview_item',
-    'interview_session'] as $table
+    'interview_session', 'php_session'] as $table
 ) {
     $pdo->exec("DELETE FROM `$table`");
 }

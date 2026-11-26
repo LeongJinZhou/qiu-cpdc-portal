@@ -9,6 +9,10 @@ use Cpdc\Env;
 
 final class Connection
 {
+    /** MySQL 8's default SQL mode; MariaDB 10.11 knows every part of it. */
+    public const SQL_MODE = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,'
+        . 'ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+
     public static function fromEnv(): PDO
     {
         $dsn = sprintf(
@@ -55,8 +59,9 @@ final class Connection
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
-            // All DATETIME values are UTC (ARCHITECTURE section 13).
-            PDO::MYSQL_ATTR_INIT_COMMAND => "SET time_zone = '+00:00'",
+            // All DATETIME values are UTC (ARCHITECTURE section 13). The SQL mode is MySQL 8's default, set on every
+            // connection: hosts differ (Aiven defaults to ANSI, where "text" is a column name), the app must not.
+            PDO::MYSQL_ATTR_INIT_COMMAND => "SET time_zone = '+00:00', sql_mode = '" . self::SQL_MODE . "'",
         ];
         if ($sslCa !== null && trim($sslCa) !== '') {
             $options[PDO::MYSQL_ATTR_SSL_CA] = $sslCa;
