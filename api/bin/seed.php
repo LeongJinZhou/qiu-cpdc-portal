@@ -31,7 +31,9 @@ foreach (
     'logbook_review_link', 'logbook_entry', 'internship', 'showcase_tech', 'showcase_project', 'assessment_answer',
     'assessment_attempt', 'job_application', 'skill_rating', 'skill_assessment', 'learning_record', 'workshop_rsvp',
     'cv_document', 'career_path_progress', 'mentor_request', 'mentor_offer', 'network_profile', 'interview_item',
-    'interview_session', 'php_session'] as $table
+    'interview_session', 'php_session',
+    // slice B: survey rounds are re-created below, so local runs never pile them up
+    'survey_response', 'survey_cycle'] as $table
 ) {
     $pdo->exec("DELETE FROM `$table`");
 }
@@ -76,4 +78,95 @@ foreach ($fakeAlumni as $i => [$name, $matric, $faculty, $year, $status, $title,
     $profile->execute([$id, $faculty, 'Bachelor of ' . substr($faculty, 11), $year, $status, $title, $company,
         $active ? $now : null]);
 }
-echo "Seeded fake alumni; example.test sign-in allowed.\n";
+
+// --- slice B: one open survey round, fake students with answers, and fake self-assessment results (begin) ---
+$pdo->exec(
+    "INSERT INTO survey_cycle (organisation_id, title, academic_year, status, opens_at)"
+    . " VALUES (1, 'University and Programme Survey 2026/2027', '2026/2027', 'open', UTC_TIMESTAMP(3))"
+);
+$cycle = (int) $pdo->lastInsertId();
+$items = array_keys(\Cpdc\Survey\SurveyForm::items());
+$response = $pdo->prepare(
+    'INSERT INTO survey_response (organisation_id, cycle_id, user_id, status, faculty, programme, semester,'
+    . ' answers_json, comments_json, submitted_at) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+);
+$find = $pdo->prepare('SELECT id, bands_json FROM assessment WHERE title = ? AND organisation_id = 1');
+$find->execute(['Student Characteristics Self-Assessment']);
+$found = $find->fetch(PDO::FETCH_ASSOC);
+$characteristics = is_array($found) ? (int) $found['id'] : 0;
+/** @var list<array{min_percent: int, label: string}> $bands */
+$bands = is_array($found) ? json_decode((string) $found['bands_json'], true) : [];
+$options = $pdo->prepare(
+    'SELECT q.id AS qid, o.id AS oid, o.points FROM assessment_question q'
+    . ' JOIN assessment_option o ON o.question_id = q.id WHERE q.assessment_id = ? ORDER BY q.position, o.position'
+);
+$options->execute([$characteristics]);
+$byQuestion = [];
+foreach ($options->fetchAll(PDO::FETCH_ASSOC) as $o) {
+    $byQuestion[(int) $o['qid']][(int) $o['points']] = (int) $o['oid'];
+}
+$attempt = $pdo->prepare(
+    'INSERT INTO assessment_attempt (organisation_id, assessment_id, user_id, score, max_score, band_label,'
+    . ' reflection_answers, faculty, semester) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)'
+);
+$answer = $pdo->prepare('INSERT INTO assessment_answer (attempt_id, question_id, option_id) VALUES (?, ?, ?)');
+$student = $pdo->prepare(
+    'INSERT INTO `user` (organisation_id, email, display_name, matric_no, department, role, onboarded_at, consent_at,'
+    . " consent_version) VALUES (1, ?, ?, ?, ?, 'student', ?, ?, '2026-11-25')"
+);
+$studentProfile = $pdo->prepare(
+    "INSERT INTO career_profile (user_id, organisation_id, faculty, programme, employment_status)"
+    . " VALUES (?, 1, ?, ?, 'unknown')"
+);
+// name, matric, faculty (programme: "Bachelor of" + the rest), semester, survey status ('' = none),
+// base survey rating, trait level (0 = no self-assessment)
+$fakeStudents = [
+    ['Fake Student Five', 'FAKE-S-2001', 'Faculty of Fake Studies', 3, 'submitted', 4, 4],
+    ['Fake Student Six', 'FAKE-S-2002', 'Faculty of Fake Studies', 5, 'submitted', 3, 3],
+    ['Fake Student Seven', 'FAKE-S-2003', 'Faculty of Other Studies', 2, 'submitted', 5, 5],
+    ['Fake Student Eight', 'FAKE-S-2004', 'Faculty of Other Studies', 4, 'draft', 2, 2],
+    ['Fake Student Nine', 'FAKE-S-2005', 'Faculty of Other Studies', 1, '', 0, 0],
+];
+foreach ($fakeStudents as $i => $fake) {
+    [$name, $matric, $faculty, $semester] = [(string) $fake[0], (string) $fake[1], (string) $fake[2], (int) $fake[3]];
+    [$status, $base, $level] = [(string) $fake[4], (int) $fake[5], (int) $fake[6]];
+    $programme = 'Bachelor of ' . substr($faculty, 11);
+    $email = strtolower(str_replace(' ', '.', $name)) . '@example.test';
+    $student->execute([$email, $name, $matric, $faculty, $now, $now]);
+    $id = (int) $pdo->lastInsertId();
+    $studentProfile->execute([$id, $faculty, $programme]);
+    if ($status !== '') {
+        $answers = [];
+        foreach ($items as $n => $key) {
+            $answers[$key] = $key === 'ss_hostel' && $i % 2 === 0 ? 'na' : max(1, min(5, $base + ($n % 3) - 1));
+        }
+        if ($status === 'draft') {
+            $answers = array_slice($answers, 0, 12, true);
+        }
+        $comments = ['programme' => 'Fake comment: more industry projects, please.',
+            'support' => 'Fake: longer library hours.'];
+        $response->execute([$cycle, $id, $status, $faculty, $programme, $semester, json_encode($answers),
+            json_encode($comments), $status === 'submitted' ? $now : null]);
+    }
+    if ($level > 0 && $characteristics > 0) {
+        $score = 0;
+        $chosen = [];
+        foreach ($byQuestion as $qid => $points) {
+            $p = max(1, min(5, $level + (($qid + $i) % 3) - 1));
+            $chosen[$qid] = $points[$p];
+            $score += $p;
+        }
+        $max = 5 * count($byQuestion);
+        $percent = intdiv($score * 100, max(1, $max));
+        $band = \Cpdc\Assessment\Scoring::band($bands, $percent);
+        $attempt->execute([$characteristics, $id, $score, $max, $band,
+            json_encode(['Fake: I will join one club and practise presenting.', 'Fake: more mentoring sessions.']),
+            $faculty, $semester]);
+        $attemptId = (int) $pdo->lastInsertId();
+        foreach ($chosen as $qid => $oid) {
+            $answer->execute([$attemptId, $qid, $oid]);
+        }
+    }
+}
+// --- slice B (end) ---
+echo "Seeded fake alumni, fake students, an open survey round; example.test sign-in allowed.\n";

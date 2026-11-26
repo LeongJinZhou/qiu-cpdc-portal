@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Cpdc\Http;
 
-/** CSV download. Cells that a spreadsheet would run as a formula (= + - @, tab, CR) get a leading quote. */
+/**
+ * CSV download. Cells that a spreadsheet would run as a formula (= + - @, the full-width ＠, tab, CR) get a
+ * leading quote.
+ */
 final class Csv
 {
     /**
@@ -29,7 +32,8 @@ final class Csv
     {
         return implode(',', array_map(static function ($cell): string {
             $text = (string) ($cell ?? '');
-            if ($text !== '' && in_array($text[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
+            $formula = $text !== '' && in_array($text[0], ['=', '+', '-', '@', "\t", "\r"], true);
+            if ($formula || str_starts_with($text, "\u{FF20}")) {
                 $text = "'" . $text;
             }
 
