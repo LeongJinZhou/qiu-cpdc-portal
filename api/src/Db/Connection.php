@@ -9,9 +9,12 @@ use Cpdc\Env;
 
 final class Connection
 {
-    /** MySQL 8's default SQL mode; MariaDB 10.11 knows every part of it. */
-    public const SQL_MODE = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,'
-        . 'ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+    /**
+     * MySQL 8's default SQL mode without ONLY_FULL_GROUP_BY: MariaDB (Exabytes) has no such default, and its version
+     * of that check refuses grouped queries MySQL accepts. Every part is known to MySQL 8 and MariaDB 10.11.
+     */
+    public const SQL_MODE = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,'
+        . 'NO_ENGINE_SUBSTITUTION';
 
     public static function fromEnv(): PDO
     {
