@@ -36,8 +36,26 @@ interface ErrorBody {
   index?: unknown;
 }
 
-async function send<T>(path: string, init: RequestInit): Promise<T> {
+/** The current session's CSRF token, read fresh from the server (same origin only). */
+async function freshCsrfToken(): Promise<string | null> {
+  const res = await fetch('/api/me', { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+  if (!res.ok) return null;
+  const me = (await res.json().catch(() => null)) as { csrf_token?: unknown } | null;
+  return typeof me?.csrf_token === 'string' ? me.csrf_token : null;
+}
+
+async function send<T>(path: string, init: RequestInit, retried = false): Promise<T> {
   const res = await fetch(path, { credentials: 'same-origin', ...init });
+  // A page open across a new sign-in (another tab, or a server restart) holds an old CSRF token. The server did
+  // nothing, so fetch the session's current token and try once more.
+  const headers = init.headers as Record<string, string> | undefined;
+  if (res.status === 403 && !retried && headers?.['X-CSRF-Token'] !== undefined) {
+    const body = (await res.clone().json().catch(() => null)) as ErrorBody | null;
+    const token = body?.error?.code === 'CSRF' ? await freshCsrfToken() : null;
+    if (token !== null && token !== headers['X-CSRF-Token']) {
+      return send<T>(path, { ...init, headers: { ...headers, 'X-CSRF-Token': token } }, true);
+    }
+  }
   if (!res.ok) {
     const body = (await res.json().catch(() => null)) as ErrorBody | null;
     // The field and row may sit inside "error" or beside it.
