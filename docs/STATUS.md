@@ -38,6 +38,13 @@
   text, so a small programme can point to one student (hide them under 5 answers, or tell students the survey is
   not anonymous); two first placement saves at the same moment give a 500 instead of a clear answer; a student may
   answer the satisfaction survey before the internship ends (the home to-do only asks after).
+- From the UX review, still open: survey support units show only ACMS short names (SARD, SRD, SLD, FAD, ISO), the
+  full names are CPDC's to give; specializations stay free text (fields of study are open); low items: "Close"
+  buttons on /surveys/manage and "Start" on /assessments without the item name for screen readers, focus not moved
+  after "Send application" or a survey step, Likert labels at 10.5px, no "Clear filters" on an empty job search,
+  placement supervisor inputs not aligned. Fixed: focus ring now solid crimson (WCAG 1.4.11), /assessments no
+  longer scrolls sideways on phones, no empty Access panel for alumni, My applications as cards on phones, job
+  State from a fixed list of Malaysian states (server checked), Location renamed "City or Remote".
 
 ## Next step
 Founder checks the ACMS features live (as a student and as CPDC), then the "production" sweep before real students.

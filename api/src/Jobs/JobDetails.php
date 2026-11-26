@@ -16,6 +16,10 @@ final class JobDetails
         'pay_frequency', 'min_qualification', 'work_experience', 'other_requirements', 'benefits', 'country', 'state',
         'contact_email'];
     public const PAY = ['monthly', 'hourly', 'lump_sum', 'unpaid', 'negotiable'];
+    /** Malaysia's 13 states and 3 federal territories, plus one choice for jobs abroad: students filter by these. */
+    public const STATES = ['Johor', 'Kedah', 'Kelantan', 'Melaka', 'Negeri Sembilan', 'Pahang', 'Perak', 'Perlis',
+        'Pulau Pinang', 'Sabah', 'Sarawak', 'Selangor', 'Terengganu', 'Kuala Lumpur', 'Labuan', 'Putrajaya',
+        'Outside Malaysia'];
 
     private const TEXT = ['min_qualification' => 160, 'work_experience' => 160, 'other_requirements' => 5000,
         'benefits' => 5000, 'country' => 80, 'state' => 80];
@@ -34,6 +38,9 @@ final class JobDetails
         foreach (self::TEXT as $field => $max) {
             $text = trim((string) ($data[$field] ?? ''));
             $out[$field] = $text === '' ? null : mb_substr($text, 0, $max);
+        }
+        if ($out['state'] !== null && !in_array($out['state'], self::STATES, true)) {
+            throw ApiError::validation('state', 'Choose a state from the list.');
         }
         $pay = $data['pay_frequency'] ?? null;
         $out['pay_frequency'] = in_array($pay, self::PAY, true) ? $pay : null;

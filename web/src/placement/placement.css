@@ -354,6 +354,8 @@
   }
 }
 
+/* Company names wrap at word breaks, never mid-word; the table scrolls inside its panel on phones instead. */
 .pl-table td:first-child {
-  overflow-wrap: anywhere;
+  min-width: 160px;
+  overflow-wrap: break-word;
 }

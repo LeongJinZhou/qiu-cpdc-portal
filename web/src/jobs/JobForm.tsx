@@ -29,6 +29,9 @@ interface Draft {
 }
 
 // --- slice A: job details and brochure (begin) ---
+/** Same list as JobDetails::STATES on the server, which refuses anything else. */
+export const STATES = ['Johor', 'Kedah', 'Kelantan', 'Melaka', 'Negeri Sembilan', 'Pahang', 'Perak', 'Perlis',
+  'Pulau Pinang', 'Sabah', 'Sarawak', 'Selangor', 'Terengganu', 'Kuala Lumpur', 'Labuan', 'Putrajaya', 'Outside Malaysia'];
 const EXTRA_TEXT = ['specializations', 'vacancy_count', 'duration_months', 'salary_min', 'salary_max', 'min_qualification',
   'work_experience', 'other_requirements', 'benefits', 'country', 'state', 'contact_email'] as const;
 type Extras = Record<(typeof EXTRA_TEXT)[number], string> & { pay_frequency: PayFrequency | '' };
@@ -234,7 +237,7 @@ function Editor({
           </select>
         </div>
         <div className="field">
-          <label htmlFor="jf-location">Location</label>
+          <label htmlFor="jf-location">City or Remote</label>
           <input id="jf-location" className="input" required maxLength={200} placeholder="Ipoh, Kuala Lumpur or Remote" value={draft.location} aria-invalid={invalid('location')} onChange={(e) => set('location', e.target.value)} />
         </div>
         <div className="field">
@@ -276,7 +279,16 @@ function Editor({
           </div>
           <Text id="jf-qual" label="Minimum qualification" value={draft.extras.min_qualification} onChange={(v) => setExtra('min_qualification', v)} />
           <Text id="jf-exp" label="Work experience" value={draft.extras.work_experience} onChange={(v) => setExtra('work_experience', v)} />
-          <Text id="jf-state" label="State" value={draft.extras.state} onChange={(v) => setExtra('state', v)} hint="Students filter by state." />
+          <div className="field">
+            <label htmlFor="jf-state">State</label>
+            <select id="jf-state" className="select" value={draft.extras.state} aria-invalid={invalid('state')} onChange={(e) => setExtra('state', e.target.value)}>
+              <option value="">Not stated</option>
+              {/* A state saved before this list existed still shows; saving then asks for one from the list. */}
+              {draft.extras.state !== '' && !STATES.includes(draft.extras.state) && <option value={draft.extras.state}>{draft.extras.state}</option>}
+              {STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <span className="hint">Students filter by state.</span>
+          </div>
           <Text id="jf-country" label="Country" value={draft.extras.country} onChange={(v) => setExtra('country', v)} />
           <Text id="jf-contact" label="Employer contact email" type="email" value={draft.extras.contact_email} onChange={(v) => setExtra('contact_email', v)} hint="Shown as a Contact employer link." invalid={invalid('contact_email')} />
         </div>

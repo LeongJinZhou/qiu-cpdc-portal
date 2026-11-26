@@ -37,7 +37,7 @@ test('jobs, applications, skills gap and learning checks', async ({ page }) => {
   await page.getByRole('button', { name: 'Post a job' }).click();
   await page.getByLabel('Employer', { exact: true }).selectOption({ label: EMPLOYER });
   await page.getByLabel('Job title').fill(JOB);
-  await page.getByLabel('Location').fill('Ipoh');
+  await page.getByLabel('City or Remote').fill('Ipoh');
   await page.getByLabel('Closing date').fill('2030-12-31');
   await page.getByLabel('Description').fill('Clean data and build dashboards with the analytics team.');
   await page.getByLabel('Data analysis').selectOption('4');

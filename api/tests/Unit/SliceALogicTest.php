@@ -84,6 +84,14 @@ final class SliceALogicTest extends TestCase
         JobDetails::fromBody(['salary_min' => 0, 'salary_max' => 10, 'pay_frequency' => 'unpaid']);
     }
 
+    public function testJobStateComesFromTheListOnly(): void
+    {
+        $this->assertSame('Pulau Pinang', JobDetails::fromBody(['state' => ' Pulau Pinang '])['state']);
+        $this->assertCount(17, JobDetails::STATES, '13 states, 3 federal territories, Outside Malaysia');
+        $this->expectException(ApiError::class);
+        JobDetails::fromBody(['state' => 'Data Science']);
+    }
+
     public function testCsvQuotesFormulasIncludingFullWidthForms(): void
     {
         $body = Csv::response('x.csv', ['h'], [['=1'], ['＠SUM(A1)'], ['＋1'], ['-2'], ["\tx"], ['ok'], [null]])->body;

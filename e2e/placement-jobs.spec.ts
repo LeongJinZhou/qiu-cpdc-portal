@@ -80,14 +80,14 @@ for (const viewport of VIEWPORTS) {
     await page.getByRole('button', { name: 'Post a job' }).click();
     await page.getByLabel('Employer', { exact: true }).selectOption({ label: employer });
     await page.getByLabel('Job title').fill(job);
-    await page.getByLabel('Location').fill('Ipoh');
+    await page.getByLabel('City or Remote').fill('Ipoh');
     await page.getByLabel('Closing date').fill('2030-12-31');
     await page.getByLabel('Description').fill('Clean data and build dashboards.');
     await page.getByLabel('Specializations').fill(`Data Science ${run}, Computer Science`);
     await page.getByLabel('Salary from (RM)').fill('1000');
     await page.getByLabel('Salary to (RM)').fill('1500');
     await page.getByLabel('Paid').selectOption('monthly');
-    await page.getByLabel('State', { exact: true }).fill('Perak');
+    await page.getByLabel('State', { exact: true }).selectOption('Perak');
     await page.getByLabel('Employer contact email').fill('hr@company.example');
     await page.getByRole('button', { name: 'Post job' }).click();
     await expect(page.getByText(`${job} is saved.`)).toBeVisible();

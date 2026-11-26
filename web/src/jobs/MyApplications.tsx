@@ -18,7 +18,7 @@ export function MyApplications({ me, onOpen }: { me: Me; onOpen: (jobId: number)
       )}
       {list.data && list.data.items.length > 0 && (
         <div className="table-wrap">
-          <table className="table">
+          <table className="table table-cards">
             <thead>
               <tr>
                 <th>Job</th>
@@ -39,8 +39,8 @@ export function MyApplications({ me, onOpen }: { me: Me; onOpen: (jobId: number)
                     <span className={applicationTone(a.status)}>{APPLICATION_LABEL[a.status]}</span>
                     <div className="small muted num">since {dateLabel(a.status_changed_at)}</div>
                   </td>
-                  <td className="small num">{dateLabel(a.created_at)}</td>
-                  <td className="small num">{dayLabel(a.closing_date)}</td>
+                  <td className="small num" data-label="Applied">{dateLabel(a.created_at)}</td>
+                  <td className="small num" data-label="Closes">{dayLabel(a.closing_date)}</td>
                   <td>
                     {a.cv_name && (
                       <a className="btn btn-quiet btn-small" href={`/api/applications/${a.id}/cv`} download aria-label={`Download the CV sent for ${a.title}`}>

@@ -123,6 +123,8 @@ function RoleTools({ me, person, onChanged }: { me: Me; person: Profile; onChang
   const superadmin = me.user.role === 'superadmin';
   const choices = ASSIGNABLE.filter((r) => r !== 'admin' || superadmin);
   const canChangeRole = person.role !== 'alumni' && (superadmin || person.role !== 'admin');
+  // Nothing to change (an alumnus, or an admin seen by an admin): no empty "Access" panel.
+  if (!canChangeRole && person.role !== 'student') return null;
 
   async function changeRole(event: FormEvent) {
     event.preventDefault();
