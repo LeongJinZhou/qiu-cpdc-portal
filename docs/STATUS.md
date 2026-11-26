@@ -1,10 +1,12 @@
 # STATUS
 
 ## Open
-- Render hosting reuses the founder's existing web service `qiu-cpdc-career-portal` (free, no Blueprint), which
-  deploys branch `master` of repo LeongJinZhou/qiu-cpdc-career-portal. Deploy: `git switch render-deploy && git merge
-  main && git push render-host render-deploy:master`. The old Next.js code is kept there on branch `legacy-nextjs` and
-  tag `legacy-nextjs-2d10712`. The service must use the Docker runtime (Dockerfile at the root, health /api/health).
+- Live on Render since 2026-11-26: https://qiu-cpdc-portal.onrender.com, Blueprint `qiu-cpdc` from repo
+  qiu-cpdc-portal, branch `main` (every push deploys). Checked: health ok on the Aiven database, pages, headers,
+  Google and LinkedIn redirects. Not yet checked: a real Google and LinkedIn sign-in (founder), then each module.
+- The old Render service `qiu-cpdc-career-portal` (Next.js) is no longer used; its repo's master now holds this
+  portal, the Next.js code is on branch `legacy-nextjs`. Removing that service is the founder's call.
+- Security: an Aiven database password was pasted in chat on 2026-11-26. Reset it in Aiven and in Render.
 - Founder: create the MySQL database for Render (Aiven free plan or similar), fill the Render values, register the
   callback URLs at Google and LinkedIn (docs/RELEASE.md). Exabytes upload when ready.
 - Founder, when wanted: `ANTHROPIC_API_KEY` in Render for interview feedback (paid; `AI_MODEL` claude-sonnet-5-5 in

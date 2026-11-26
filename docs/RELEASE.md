@@ -33,14 +33,12 @@ Render runs the same upload as Exabytes (`npm run package:exabytes`), in the sam
 app, above public_html) and `/home/cpdc/public_html` (web app, `.htaccess`, `index.php`). Routing and security
 headers come from `public_html/.htaccess`, as on cPanel. CI starts this image on MariaDB 10.11 and checks it.
 
-The founder's existing Render web service `qiu-cpdc-career-portal` (free plan, no Blueprint) deploys branch
-`master` of repo `LeongJinZhou/qiu-cpdc-career-portal`. The lead deploys with
-`git switch render-deploy && git merge main && git push render-host render-deploy:master`.
-1. Render, the service, Settings: Language **Docker**, Dockerfile path `./Dockerfile`, no build or start command,
-   Health Check Path `/api/health`.
-2. Environment: the values in `render.yaml` (`APP_ENV`, `APP_URL` = `https://<service>.onrender.com`,
-   `SUPERADMIN_EMAIL`, Google, LinkedIn, `DB_*`, `DB_SSL_CA`, `MAIL_DRIVER`, `AI_*`, `LOG_MIRROR` and the bases).
-   Secret Files: `db-ca.pem` = the database CA certificate.
+Live: Blueprint `qiu-cpdc` (repo `qiu-cpdc-portal`, branch `main`), service https://qiu-cpdc-portal.onrender.com.
+Every push to `main` deploys.
+1. Render, New, Blueprint, pick `qiu-cpdc-portal` (uses `render.yaml`, Docker). A Blueprint refuses empty values.
+2. Fill every value marked "sync: false" (`APP_URL` = the service address, `SUPERADMIN_EMAIL`, Google, LinkedIn,
+   `DB_*`). Secret Files: `db-ca.pem` = the database CA certificate. Without it the start log says the file is
+   missing and the service never goes live.
 3. Deploy. Check `https://<service>.onrender.com/api/health` says `{"status":"ok"}`.
 4. Sign in with `ai@qiu.edu.my`: you are super admin.
 
