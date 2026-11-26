@@ -8,6 +8,7 @@ const internship: Internship = {
   supervisor_email: 'boss@company.example',
   start_date: '2027-01-06',
   end_date: '2027-02-05',
+  placement_submitted_at: null,
 };
 
 describe('logbook weeks', () => {

@@ -31,8 +31,21 @@
   `--debug` runs it serially.
 - No production sweep yet ("production" before real students use it).
 
+- Slice A (ACMS port): the industry list is MSIC 2008's 21 sections, an assumption until CPDC sends the ACMS list.
+  The satisfaction table and My applications scroll inside their panel on phones (no page overflow). Students on
+  the short slice 2a internship see a "Complete placement form" notice.
+
 ## Next step
 Founder sets up the Render database and keys; then the lead checks sign-in and each module live.
+
+## Done: slice A of the ACMS port, 2026-11-26 (branch claude/slice-a-placement-e0dfb9, not merged)
+- Placement form on /logbook (Placement tab), change reason + old/new snapshot after submission, satisfaction survey
+  (Survey tab); CPDC /internships gets Placements (filters, change history, Industry Visit CSV) and Satisfaction
+  (per company, Industry Satisfaction CSV) tabs; jobs: extra details, state and specialization filters, Apply button,
+  Contact employer, PDF brochure, closing date in My applications.
+- Migrations 0500, 0502, 0503 (`placement.manage`); seed adds fake interns and an onboarded "graduate" student.
+- Checks: 300 PHPUnit tests, PHPStan 8, PHPCS, ESLint, tsc, build, vitest, 10 Playwright tests (new
+  e2e/placement-jobs.spec.ts at 1280px and 390px), gitleaks.
 
 ## Done: slices 2 and 3, 2026-11-26 (four parallel sessions, merged into main)
 - 2a: internship logbook with supervisor approval by single-use emailed link (no login), CPDC intern progress; FYP

@@ -31,7 +31,9 @@ foreach (
     'logbook_review_link', 'logbook_entry', 'internship', 'showcase_tech', 'showcase_project', 'assessment_answer',
     'assessment_attempt', 'job_application', 'skill_rating', 'skill_assessment', 'learning_record', 'workshop_rsvp',
     'cv_document', 'career_path_progress', 'mentor_request', 'mentor_offer', 'network_profile', 'interview_item',
-    'interview_session', 'php_session'] as $table
+    'interview_session', 'php_session',
+    // slice A: placement history and satisfaction answers
+    'internship_change_log', 'internship_satisfaction'] as $table
 ) {
     $pdo->exec("DELETE FROM `$table`");
 }
@@ -76,4 +78,55 @@ foreach ($fakeAlumni as $i => [$name, $matric, $faculty, $year, $status, $title,
     $profile->execute([$id, $faculty, 'Bachelor of ' . substr($faculty, 11), $year, $status, $title, $company,
         $active ? $now : null]);
 }
-echo "Seeded fake alumni; example.test sign-in allowed.\n";
+// --- slice A: fake interns with placements, one change and survey answers, so /internships shows data ---
+// The student behind the fake Google persona "graduate" is onboarded with no internship: the e2e placement spec
+// starts from there.
+$user->execute(['graduate@example.test', 'Fake Graduate', 'FAKE-S-0003', 'Faculty of Fake Studies', 'student', $now,
+    $now, '2026-11-25', null]);
+$linkedin->execute([(int) $pdo->lastInsertId(), 'li-sub-seed-graduate', 'Fake Graduate',
+    'https://www.linkedin.com/in/fake-graduate']);
+$placement = $pdo->prepare(
+    'INSERT INTO internship (organisation_id, student_id, company, business_nature, company_address_1,'
+    . ' company_postcode, company_state, company_country, supervisor_name, supervisor_email, supervisor_phone,'
+    . ' start_date, end_date, batch_month, batch_year, roles_responsibilities, monthly_allowance_rm, has_hr_contact,'
+    . ' hr_name, hr_phone, hr_email, placement_submitted_at)'
+    . " VALUES (1, ?, ?, ?, '1 Jalan Contoh', '30000', ?, 'Malaysia', 'Fake Supervisor', ?, '012-000 0000', ?, ?, ?, ?,"
+    . " 'Fake tasks for the seed.', ?, ?, ?, ?, ?, ?)"
+);
+$survey = $pdo->prepare(
+    'INSERT INTO internship_satisfaction (organisation_id, internship_id, user_id, recommend_juniors, overall_rating,'
+    . ' offered_job, feedback) VALUES (1, ?, ?, ?, ?, ?, ?)'
+);
+// name, matric, faculty, company, nature, state, start, end, allowance, HR?
+$interns = [
+    ['Fake Intern One', 'FAKE-S-2001', 'Faculty of Fake Studies', 'Fake Data Sdn Bhd', 'Information and communication',
+        'Perak', '2026-07-06', '2026-09-25', 900, true],
+    ['Fake Intern Two', 'FAKE-S-2002', 'Faculty of Fake Studies', 'Fake Data Sdn Bhd', 'Information and communication',
+        'Perak', '2026-07-06', '2026-09-25', 900, true],
+    ['Fake Intern Three', 'FAKE-S-2003', 'Faculty of Other Studies', 'Fake Clinic', 'Human health and social work',
+        'Selangor', '2026-07-13', '2026-10-02', 0, false],
+    ['Fake Intern Four', 'FAKE-S-2004', 'Faculty of Other Studies', 'Fake Bank Bhd',
+        'Financial and insurance or takaful', 'Kuala Lumpur', '2027-01-04', '2027-03-26', 1200, true],
+];
+// Survey answers per intern above: recommend, rating, offered a job. The fourth has not answered.
+$surveys = [[1, 5, 1], [1, 4, 0], [0, 2, 0]];
+foreach ($interns as $i => [$name, $matric, $faculty, $company, $nature, $state, $start, $end, $rm, $hr]) {
+    $answers = $surveys[$i] ?? null;
+    $user->execute(["intern$i@example.test", $name, $matric, $faculty, 'student', $now, $now, '2026-11-25', null]);
+    $studentId = (int) $pdo->lastInsertId();
+    $placement->execute([$studentId, $company, $nature, $state, "supervisor$i@company.example", $start, $end,
+        (int) substr($start, 5, 2), (int) substr($start, 0, 4), $rm, (int) $hr, $hr ? 'Fake HR' : null,
+        $hr ? '05-000 0000' : null, $hr ? "hr$i@company.example" : null, $now]);
+    $internshipId = (int) $pdo->lastInsertId();
+    if (is_array($answers)) {
+        $survey->execute([$internshipId, $studentId, $answers[0], $answers[1], $answers[2], 'Fake feedback.']);
+    }
+    if ($i === 0) {
+        $pdo->prepare(
+            'INSERT INTO internship_change_log (organisation_id, internship_id, user_id, change_reason, remarks,'
+            . " old_snapshot, new_snapshot) VALUES (1, ?, ?, 'allowance_role_update', 'Fake raise.', ?, ?)"
+        )->execute([$internshipId, $studentId, json_encode(['monthly_allowance_rm' => '700.00']),
+            json_encode(['monthly_allowance_rm' => '900.00'])]);
+    }
+}
+echo "Seeded fake alumni and interns; example.test sign-in allowed.\n";

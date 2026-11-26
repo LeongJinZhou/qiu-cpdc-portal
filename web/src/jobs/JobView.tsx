@@ -1,6 +1,7 @@
 // One job for a student or graduate: what it is, who offers it, the skills it asks for, and applying.
 import { ArrowLeft, Building2, CheckCircle2, ExternalLink, Gauge, MapPin, Send } from 'lucide-react';
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type MouseEvent } from 'react';
+import { JobFacts } from './JobFacts';
 import { apiGet, apiPostForm, apiWrite, useLoad } from '../api';
 import type { Me } from '../auth';
 import { LevelPips } from '../skills/LevelPips';
@@ -48,7 +49,15 @@ export function JobView({
           <span><MapPin size={13} aria-hidden="true" /> {job.location}</span>
           <Closing date={job.closing_date} />
         </div>
+        {!job.my_application && job.open && (
+          <div>
+            <a className="btn btn-primary" href="#apply-h" onClick={jumpToApply}>
+              <Send size={16} aria-hidden="true" /> Apply
+            </a>
+          </div>
+        )}
       </header>
+      <JobFacts job={job} />
 
       {job.my_application ? (
         <ApplicationState job={job} csrf={me.csrf_token} onChanged={(next) => { setFresh(next); onApplied(); }} />
@@ -96,6 +105,14 @@ export function JobView({
       </section>
     </article>
   );
+}
+
+/** The header's Apply button: brings the application form into view and puts the cursor in the note. */
+function jumpToApply(event: MouseEvent) {
+  event.preventDefault();
+  const note = document.getElementById('apply-note');
+  note?.scrollIntoView({ block: 'center' });
+  note?.focus({ preventScroll: true });
 }
 
 function BackButton({ onBack }: { onBack: () => void }) {

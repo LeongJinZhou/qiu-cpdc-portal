@@ -1,0 +1,12 @@
+{
+  "$comment": "PUT /api/placement/satisfaction: the intern's post-internship survey. overall_rating 1 Poor to 5 Excellent.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["recommend_juniors", "overall_rating", "offered_job"],
+  "properties": {
+    "recommend_juniors": { "type": "boolean" },
+    "overall_rating": { "type": "integer", "minimum": 1, "maximum": 5 },
+    "offered_job": { "type": "boolean" },
+    "feedback": { "type": "string", "maxLength": 2000 }
+  }
+}

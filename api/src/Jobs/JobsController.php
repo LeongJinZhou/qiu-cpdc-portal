@@ -21,11 +21,27 @@ final class JobsController
         $user = self::user($req, $app);
         $query = (new Validator())->query(ProfileController::SCHEMAS . 'jobs.query.json', $req->query);
         $page = Paginator::fromQuery($query, $app->settings($user['organisation_id']));
-        /** @var array{q?: string, type?: string, location?: string} $filters */
-        $filters = array_intersect_key($query, ['q' => 1, 'type' => 1, 'location' => 1]);
+        /** @var array{q?: string, type?: string, location?: string, state?: string, specialization?: string} $filters */
+        $filters = array_intersect_key(
+            $query,
+            ['q' => 1, 'type' => 1, 'location' => 1, 'state' => 1, 'specialization' => 1]
+        );
 
         return Response::json((new JobService($app->pdo()))
             ->listOpen($user['organisation_id'], $user['id'], self::today($app, $user), $filters, $page));
+    }
+
+    /**
+     * The states and specializations open jobs name, for the filter bar.
+     *
+     * @param array<string, string> $params
+     */
+    public static function filters(Request $req, array $params, App $app): Response
+    {
+        $user = self::user($req, $app);
+
+        return Response::json((new JobService($app->pdo()))
+            ->filters($user['organisation_id'], self::today($app, $user)));
     }
 
     /** @param array<string, string> $params */

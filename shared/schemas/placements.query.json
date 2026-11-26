@@ -1,0 +1,17 @@
+{
+  "$comment": "GET /api/placements, /api/placements/satisfaction and both CSV exports (CPDC, placement.manage). Allowance in RM per month.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "q": { "type": "string", "maxLength": 100 },
+    "company": { "type": "string", "maxLength": 200 },
+    "faculty": { "type": "string", "maxLength": 200 },
+    "business_nature": { "type": "string", "maxLength": 80 },
+    "batch_year": { "type": "integer", "minimum": 2000, "maximum": 2100 },
+    "batch_month": { "type": "integer", "minimum": 1, "maximum": 12 },
+    "allowance_min": { "type": "integer", "minimum": 0, "maximum": 100000 },
+    "allowance_max": { "type": "integer", "minimum": 0, "maximum": 100000 },
+    "page": { "type": "integer" },
+    "per_page": { "type": "integer" }
+  }
+}

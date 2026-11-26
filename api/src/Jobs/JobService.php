@@ -18,24 +18,25 @@ use PDO;
 final class JobService
 {
     private const JOB_COLUMNS = 'j.id, j.title, j.job_type, j.location, j.closing_date, j.status, j.employer_id,'
-        . ' e.name AS employer_name';
+        . ' e.name AS employer_name, j.state, j.specializations, j.salary_min, j.salary_max, j.pay_frequency';
+    private const OPEN = "j.organisation_id = ? AND j.status = 'open' AND j.closing_date >= ? AND e.active = 1";
 
     public function __construct(private readonly PDO $pdo)
     {
     }
 
     /**
-     * @param array{q?: string, type?: string, location?: string} $filters
+     * @param array{q?: string, type?: string, location?: string, state?: string, specialization?: string} $filters
      * @return array{items: list<mixed>, page: int, per_page: int, total: int}
      */
     public function listOpen(int $org, int $userId, string $today, array $filters, Paginator $page): array
     {
-        $where = "j.organisation_id = ? AND j.status = 'open' AND j.closing_date >= ? AND e.active = 1";
+        $where = self::OPEN;
         $args = [$org, $today];
         if (($filters['q'] ?? '') !== '') {
             $like = '%' . addcslashes($filters['q'], '%_\\') . '%';
-            $where .= ' AND (j.title LIKE ? OR e.name LIKE ? OR j.description LIKE ?)';
-            array_push($args, $like, $like, $like);
+            $where .= ' AND (j.title LIKE ? OR e.name LIKE ? OR j.description LIKE ? OR j.location LIKE ?)';
+            array_push($args, $like, $like, $like, $like);
         }
         if (isset($filters['type'])) {
             $where .= ' AND j.job_type = ?';
@@ -44,6 +45,15 @@ final class JobService
         if (($filters['location'] ?? '') !== '') {
             $where .= ' AND j.location LIKE ?';
             $args[] = '%' . addcslashes($filters['location'], '%_\\') . '%';
+        }
+        if (($filters['state'] ?? '') !== '') {
+            $where .= ' AND j.state = ?';
+            $args[] = $filters['state'];
+        }
+        if (($filters['specialization'] ?? '') !== '') {
+            // One whole item of the comma-separated list, any case (the column's collation).
+            $where .= " AND CONCAT(', ', j.specializations, ',') LIKE ?";
+            $args[] = '%, ' . addcslashes(trim($filters['specialization']), '%_\\') . ',%';
         }
         $from = ' FROM job_posting j JOIN employer e ON e.id = j.employer_id';
         $count = $this->pdo->prepare("SELECT COUNT(*) $from WHERE $where");
@@ -68,7 +78,8 @@ final class JobService
     public function show(int $org, int $userId, int $jobId, string $today): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT ' . self::JOB_COLUMNS . ', j.description, e.industry AS employer_industry,'
+            'SELECT ' . self::JOB_COLUMNS . ', j.description, j.' . implode(', j.', JobDetails::COLUMNS) . ','
+            . ' j.attachment_file, j.attachment_name, e.industry AS employer_industry,'
             . ' e.website AS employer_website, e.location AS employer_location, e.about AS employer_about, e.active,'
             . ' a.id AS application_id'
             . ' FROM job_posting j JOIN employer e ON e.id = j.employer_id'
@@ -80,7 +91,7 @@ final class JobService
         if (!is_array($row) || ($row['application_id'] === null && !self::isOpen($row, $today))) {
             throw new ApiError(404, 'NOT_FOUND', 'Not found.');
         }
-        $job = self::job($row);
+        $job = JobDetails::shape($row) + self::job($row);
         $job['open'] = self::isOpen($row, $today);
         $job['description'] = (string) $row['description'];
         $job['employer'] = [
@@ -229,8 +240,43 @@ final class JobService
             'job_type' => (string) $r['job_type'],
             'location' => (string) $r['location'],
             'closing_date' => (string) $r['closing_date'],
+            'state' => $r['state'],
+            'specializations' => JobDetails::split((string) ($r['specializations'] ?? '')),
+            'salary_min' => $r['salary_min'] === null ? null : (float) $r['salary_min'],
+            'salary_max' => $r['salary_max'] === null ? null : (float) $r['salary_max'],
+            'pay_frequency' => $r['pay_frequency'],
             'my_status' => $r['my_status'] ?? null,
         ];
+    }
+
+    /**
+     * The filter choices for open jobs: the states and specializations they name.
+     *
+     * @return array{states: list<string>, specializations: list<string>}
+     */
+    public function filters(int $org, string $today): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT j.state, j.specializations FROM job_posting j JOIN employer e ON e.id = j.employer_id WHERE '
+            . self::OPEN . ' LIMIT 2000'
+        );
+        $stmt->execute([$org, $today]);
+        $states = [];
+        $specializations = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            if (is_string($r['state']) && $r['state'] !== '') {
+                $states[$r['state']] = true;
+            }
+            foreach (JobDetails::split((string) ($r['specializations'] ?? '')) as $s) {
+                $specializations[mb_strtolower($s)] ??= $s;
+            }
+        }
+        $states = array_map('strval', array_keys($states));
+        sort($states, SORT_NATURAL | SORT_FLAG_CASE);
+        $specializations = array_values($specializations);
+        sort($specializations, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return ['states' => $states, 'specializations' => $specializations];
     }
 
     /** @return array<string, mixed> */

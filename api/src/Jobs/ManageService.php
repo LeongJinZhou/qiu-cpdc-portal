@@ -155,7 +155,8 @@ final class ManageService
     {
         $stmt = $this->pdo->prepare(
             'SELECT j.id, j.employer_id, e.name AS employer_name, j.title, j.job_type, j.location, j.closing_date,'
-            . ' j.description, j.status FROM job_posting j JOIN employer e ON e.id = j.employer_id'
+            . ' j.description, j.status, j.' . implode(', j.', JobDetails::COLUMNS) . ', j.attachment_file,'
+            . ' j.attachment_name FROM job_posting j JOIN employer e ON e.id = j.employer_id'
             . ' WHERE j.id = ? AND j.organisation_id = ?'
         );
         $stmt->execute([$id, $org]);
@@ -163,11 +164,20 @@ final class ManageService
         if (!is_array($row)) {
             throw new ApiError(404, 'NOT_FOUND', 'Not found.');
         }
-        $row['id'] = (int) $row['id'];
-        $row['employer_id'] = (int) $row['employer_id'];
-        $row['skills'] = (new SkillRequirements($this->pdo))->forJob($id);
+        $job = [
+            'id' => (int) $row['id'],
+            'employer_id' => (int) $row['employer_id'],
+            'employer_name' => (string) $row['employer_name'],
+            'title' => (string) $row['title'],
+            'job_type' => (string) $row['job_type'],
+            'location' => (string) $row['location'],
+            'closing_date' => (string) $row['closing_date'],
+            'description' => (string) $row['description'],
+            'status' => (string) $row['status'],
+        ] + JobDetails::shape($row);
+        $job['skills'] = (new SkillRequirements($this->pdo))->forJob($id);
 
-        return $row;
+        return $job;
     }
 
     /**
@@ -190,9 +200,22 @@ final class ManageService
             $closing,
             trim((string) $data['description']),
             (string) ($data['status'] ?? 'open'),
+            ...array_values(JobDetails::fromBody($data)),
         ];
+        $details = implode(', ', JobDetails::COLUMNS);
+        $detailMarks = implode(', ', array_fill(0, count(JobDetails::COLUMNS), '?'));
+        $detailSet = implode(', ', array_map(static fn (string $c): string => "$c = ?", JobDetails::COLUMNS));
 
-        return Transaction::run($this->pdo, function () use ($actor, $org, $id, $values, $skills): int {
+        return Transaction::run($this->pdo, function () use (
+            $actor,
+            $org,
+            $id,
+            $values,
+            $skills,
+            $details,
+            $detailMarks,
+            $detailSet
+        ): int {
             $employer = $this->pdo->prepare('SELECT active FROM employer WHERE id = ? AND organisation_id = ?');
             $employer->execute([$values[0], $org]);
             $active = $employer->fetchColumn();
@@ -202,7 +225,7 @@ final class ManageService
             if ($id === null) {
                 $this->pdo->prepare(
                     'INSERT INTO job_posting (organisation_id, employer_id, title, job_type, location, closing_date,'
-                    . ' description, status, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                    . " description, status, $details, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, $detailMarks, ?)"
                 )->execute([$org, ...$values, $actor['id']]);
                 $id = (int) $this->pdo->lastInsertId();
                 $action = 'job.create';
@@ -210,7 +233,8 @@ final class ManageService
                 $this->job($org, $id); // 404 for another organisation's job
                 $this->pdo->prepare(
                     'UPDATE job_posting SET employer_id = ?, title = ?, job_type = ?, location = ?, closing_date = ?,'
-                    . ' description = ?, status = ?, updated_at = UTC_TIMESTAMP(3) WHERE id = ? AND organisation_id = ?'
+                    . " description = ?, status = ?, $detailSet, updated_at = UTC_TIMESTAMP(3)"
+                    . ' WHERE id = ? AND organisation_id = ?'
                 )->execute([...$values, $id, $org]);
                 $action = 'job.update';
             }

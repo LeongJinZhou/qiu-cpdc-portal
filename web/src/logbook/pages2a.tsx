@@ -26,7 +26,7 @@ export function signedInPage2a(path: string, me: Me, go: (to: string) => void): 
     case 'logbook':
       return rest ? null : page('logbook.own', <LogbookPage me={me} />);
     case 'internships':
-      return page('logbook.track', id ? <InternDetailPage key={id} id={id} go={go} /> : rest ? null : <InternTracker go={go} />);
+      return page('logbook.track', id ? <InternDetailPage key={id} id={id} go={go} /> : rest ? null : <InternTracker me={me} go={go} />);
     case 'my-project':
       return rest ? null : page('showcase.own', <MyProject me={me} />);
     case 'showcase':

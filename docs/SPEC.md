@@ -281,3 +281,34 @@ mentoring.activity and interview.bank (admin, superadmin), interview.practice (s
 Tables: network_profile, mentor_offer, mentor_request, interview_question, interview_session, interview_item
 (migrations 0400-0402).
 <!-- slice 3b (end) -->
+
+<!-- slice A (ACMS port: placement, satisfaction, jobs upgrades): begin -->
+## 13. Slice A: placement form, satisfaction survey, CPDC placements, jobs upgrades (2026-11-26)
+Ported from the legacy ACMS portal, modernised: no NRIC or passport, no public student lookup.
+Rules (server enforced):
+1. The student's internship (slice 2a) becomes a placement: company, nature of business (21 MSIC 2008 sections +
+   Other, list in `Cpdc\Placement\BusinessNature`), address 1-3, postcode, state, country, start and end, batch
+   month and year, roles, monthly allowance in RM (0 = unpaid), HR name, phone and email or "No HR personnel" (then
+   none stored), industry supervisor name, work email and phone. `PUT /api/placement` (logbook.own).
+2. The first full save marks it submitted. After that every change needs a reason (company change, date change,
+   supervisor or HR update, allowance or role update, correction) and optional remarks; `internship_change_log`
+   keeps the old and new snapshot. Saving the same values again adds no row. The short slice 2a form refuses a
+   submitted placement (409). A new supervisor email voids unused review links, as in the logbook.
+3. Satisfaction survey, one per internship, the owner's to change: recommend QIU juniors (yes/no), overall rating
+   1-5 (Poor, Fair, Good, Very good, Excellent), offered a job (yes/no), optional feedback (2000).
+4. CPDC (`placement.manage`: admin, superadmin) on `/internships`: every placement filtered by search, faculty,
+   batch, nature of business and allowance range; change history per placement (audited `placement.changes_view`);
+   satisfaction per company (answers, average rating, recommend %, internship-to-job-offer %) filtered by company,
+   faculty, batch and nature. CSV exports Industry Visit and Industry Satisfaction use the same filters, are
+   formula-escaped (also full-width ＠ ＝ ＋ －), show times in `display_timezone` and are audited with the row count.
+5. Jobs: optional specializations, vacancies, duration, salary range and pay frequency (unpaid has no salary; a
+   salary needs a frequency; max >= min), minimum qualification, work experience, other requirements, benefits,
+   state, country, contact email, and a PDF brochure (`%PDF-` check, `upload_pdf_max_bytes`, upload rate limit,
+   random name under `STORAGE_DIR/uploads/job/`, served only through `/api/jobs/{id}/brochure` to CPDC or to people
+   who may see the job; audited). Students filter by search (also place), job type, state and specialization.
+
+Data (migrations 0500, 0502, 0503): new `internship` columns, `internship_change_log`, `internship_satisfaction`
+(unique internship), new `job_posting` columns; permission `placement.manage`.
+Decision: 2026-11-26, the ACMS industry list is taken as MSIC 2008's 21 sections (assumption: ACMS's own list was not
+available here); the list lives in PHP so CPDC can change it without a migration.
+<!-- slice A: end -->

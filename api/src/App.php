@@ -83,6 +83,10 @@ final class App
         \Cpdc\Network\NetworkRoutes::add($router);
         \Cpdc\Interview\InterviewRoutes::add($router);
         // --- slice 3b (end) ---
+        // --- slice A: placement, satisfaction, jobs upgrades (begin) ---
+        \Cpdc\Placement\PlacementRoutes::add($router);
+        \Cpdc\Jobs\JobsUpgradeRoutes::add($router);
+        // --- slice A (end) ---
 
         $router
             ->add('GET', '/api/health', fn () => Response::json(['status' => 'ok']), public: true)
