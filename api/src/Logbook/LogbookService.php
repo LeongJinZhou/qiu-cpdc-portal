@@ -83,6 +83,10 @@ final class LogbookService
         $id = $student['id'];
         Transaction::run($this->pdo, function () use ($org, $id, $body, $email): void {
             $old = $this->internship($org, $id, true);
+            if ($old !== null && $old['placement_submitted_at'] !== null) {
+                // A submitted placement changes only with a reason, kept in its change history (slice A).
+                throw new ApiError(409, 'PLACEMENT_SUBMITTED', 'Change your internship in the placement form.');
+            }
             $values = [trim($body['company']), trim($body['supervisor_name']), $email, $body['start_date'],
                 $body['end_date']];
             if ($old === null) {
@@ -98,10 +102,7 @@ final class LogbookService
                 . ' end_date = ?, updated_at = UTC_TIMESTAMP(3) WHERE id = ? AND student_id = ?'
             )->execute([...$values, $old['id'], $id]);
             if ($old['supervisor_email'] !== $email) {
-                $this->pdo->prepare(
-                    'DELETE l FROM logbook_review_link l JOIN logbook_entry e ON e.id = l.entry_id'
-                    . ' WHERE e.internship_id = ? AND l.used_at IS NULL'
-                )->execute([$old['id']]);
+                ReviewLink::voidUnused($this->pdo, (int) $old['id']);
             }
         });
 
@@ -348,7 +349,8 @@ final class LogbookService
     private function internship(int $org, int $studentId, bool $lock = false): ?array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT id, company, supervisor_name, supervisor_email, start_date, end_date, updated_at FROM internship'
+            'SELECT id, company, supervisor_name, supervisor_email, start_date, end_date, placement_submitted_at,'
+            . ' updated_at FROM internship'
             . ' WHERE student_id = ? AND organisation_id = ?' . ($lock ? ' FOR UPDATE' : '')
         );
         $stmt->execute([$studentId, $org]);

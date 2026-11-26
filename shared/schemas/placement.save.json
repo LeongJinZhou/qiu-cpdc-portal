@@ -1,0 +1,33 @@
+{
+  "$comment": "PUT /api/placement: the student's placement (industry visit) form. HR fields are needed only with has_hr_contact; change_reason is needed once the placement was submitted (checked in Cpdc\\Placement\\PlacementService).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["company", "business_nature", "company_address_1", "company_postcode", "company_state", "company_country",
+    "start_date", "end_date", "batch_month", "batch_year", "monthly_allowance_rm", "roles_responsibilities",
+    "has_hr_contact", "supervisor_name", "supervisor_email", "supervisor_phone"],
+  "properties": {
+    "company": { "type": "string", "minLength": 2, "maxLength": 200, "pattern": "\\S" },
+    "business_nature": { "type": "string", "maxLength": 80 },
+    "company_address_1": { "type": "string", "minLength": 2, "maxLength": 200, "pattern": "\\S" },
+    "company_address_2": { "type": "string", "maxLength": 200 },
+    "company_address_3": { "type": "string", "maxLength": 200 },
+    "company_postcode": { "type": "string", "pattern": "^[A-Za-z0-9 -]{3,10}$" },
+    "company_state": { "type": "string", "minLength": 2, "maxLength": 80, "pattern": "\\S" },
+    "company_country": { "type": "string", "minLength": 2, "maxLength": 80, "pattern": "\\S" },
+    "start_date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "end_date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "batch_month": { "type": "integer", "minimum": 1, "maximum": 12 },
+    "batch_year": { "type": "integer", "minimum": 2000, "maximum": 2100 },
+    "monthly_allowance_rm": { "type": "number", "minimum": 0, "maximum": 100000 },
+    "roles_responsibilities": { "type": "string", "minLength": 10, "maxLength": 5000, "pattern": "\\S" },
+    "has_hr_contact": { "type": "boolean" },
+    "hr_name": { "type": "string", "maxLength": 200 },
+    "hr_phone": { "type": "string", "maxLength": 40 },
+    "hr_email": { "type": "string", "maxLength": 254 },
+    "supervisor_name": { "type": "string", "minLength": 2, "maxLength": 200, "pattern": "\\S" },
+    "supervisor_email": { "type": "string", "format": "email", "maxLength": 254 },
+    "supervisor_phone": { "type": "string", "pattern": "^[0-9+() -]{6,40}$" },
+    "change_reason": { "enum": ["company_change", "date_change", "supervisor_hr_update", "allowance_role_update", "correction"] },
+    "remarks": { "type": "string", "maxLength": 1000 }
+  }
+}

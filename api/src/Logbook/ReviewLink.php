@@ -27,4 +27,13 @@ final class ReviewLink
     {
         return rtrim($appUrl, '/') . '/review/' . $token;
     }
+
+    /** Voids every unused link of an internship's weeks: links go only to the supervisor on record. */
+    public static function voidUnused(\PDO $pdo, int $internshipId): void
+    {
+        $pdo->prepare(
+            'DELETE l FROM logbook_review_link l JOIN logbook_entry e ON e.id = l.entry_id'
+            . ' WHERE e.internship_id = ? AND l.used_at IS NULL'
+        )->execute([$internshipId]);
+    }
 }

@@ -6,6 +6,8 @@
     "q": { "type": "string", "maxLength": 100 },
     "type": { "enum": ["full_time", "part_time", "internship", "contract"] },
     "location": { "type": "string", "maxLength": 100 },
+    "state": { "type": "string", "maxLength": 80 },
+    "specialization": { "type": "string", "maxLength": 100 },
     "status": { "enum": ["draft", "open", "closed", "submitted", "reviewing", "shortlisted", "interview", "offered", "hired", "rejected", "withdrawn"] },
     "page": { "type": "integer" },
     "per_page": { "type": "integer" }

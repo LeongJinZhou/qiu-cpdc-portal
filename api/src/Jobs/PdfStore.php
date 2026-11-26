@@ -9,7 +9,8 @@ use Cpdc\Http\Response;
 use Cpdc\Http\UploadedFile;
 
 /**
- * Uploaded PDFs that are kept (application CVs, learning proofs), under STORAGE_DIR/uploads/<kind>/, outside the web
+ * Uploaded PDFs that are kept (application CVs, learning proofs, job brochures), under STORAGE_DIR/uploads/<kind>/,
+ * outside the web
  * root. A file is stored under a random 32-hex key; the client's file name is display-only. Only PDFs (by content,
  * not by name or type header) up to setting upload_pdf_max_bytes.
  */
@@ -17,11 +18,12 @@ final class PdfStore
 {
     public const CV = 'cv';
     public const LEARNING = 'learning';
+    public const BROCHURE = 'job'; // a job's PDF brochure (slice A)
     private const KEY = '/^[0-9a-f]{32}$/D';
 
     public function __construct(private readonly string $storageDir, private readonly string $kind)
     {
-        if (!in_array($kind, [self::CV, self::LEARNING], true)) {
+        if (!in_array($kind, [self::CV, self::LEARNING, self::BROCHURE], true)) {
             throw new \LogicException('unknown upload kind');
         }
     }
