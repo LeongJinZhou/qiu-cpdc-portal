@@ -60,11 +60,9 @@ services:
       - key: DB_SSL_CA
         value: /etc/secrets/db-ca.pem
       # Logbook emails. Render has no sendmail: "log" keeps them in the log (no email is sent from the test copy).
-      # Exabytes uses MAIL_DRIVER=mail with MAIL_FROM.
+      # Exabytes uses MAIL_DRIVER=mail with MAIL_FROM. (A Blueprint refuses empty values, so MAIL_FROM is left out.)
       - key: MAIL_DRIVER
         value: log
-      - key: MAIL_FROM
-        value: ""
       # Interview practice feedback. Empty key: the screen says "not set up yet".
       - key: AI_DRIVER
         value: anthropic
