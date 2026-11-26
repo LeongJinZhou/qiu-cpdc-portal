@@ -6,6 +6,7 @@ import { expect, test, type Browser, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { onboardIfAsked } from './onboarding';
+import { dayFromToday, submitPlacement } from './placement';
 
 const MAIL_LOG = fileURLToPath(new URL('../storage/logs/mail.log', import.meta.url));
 const SUPERVISOR = `fake.supervisor.${Date.now()}@company.example`;
@@ -48,15 +49,13 @@ test('logbook with supervisor approval, project showcase and a self-assessment',
 
   // Internship and one week, sent to the supervisor.
   await page.getByRole('link', { name: 'Logbook' }).click();
-  const today = new Date();
-  const start = new Date(today.getTime() - 14 * 86400000).toISOString().slice(0, 10);
-  const end = new Date(today.getTime() + 60 * 86400000).toISOString().slice(0, 10);
-  await page.getByLabel('Company').fill('Fake Engineering Sdn Bhd');
-  await page.getByLabel("Supervisor's name").fill('Fake Supervisor');
-  await page.getByLabel("Supervisor's work email").fill(SUPERVISOR);
-  await page.getByLabel('Starts').fill(start);
-  await page.getByLabel('Ends').fill(end);
-  await page.getByRole('button', { name: 'Save internship' }).click();
+  // Slice A: the internship is now the placement form.
+  await submitPlacement(page, {
+    company: 'Fake Engineering Sdn Bhd',
+    supervisorEmail: SUPERVISOR,
+    start: dayFromToday(-14),
+    end: dayFromToday(60),
+  });
   await page.getByRole('button', { name: 'Log a week' }).click();
   await page.getByLabel('What you did').fill('Built the data import and fixed two bugs in the report.');
   await page.getByLabel('What you learned').fill('How code review works in a team.');

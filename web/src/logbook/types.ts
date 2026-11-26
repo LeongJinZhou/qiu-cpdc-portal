@@ -9,6 +9,8 @@ export interface Internship {
   supervisor_email: string;
   start_date: string;
   end_date: string;
+  /** Set once the full placement form is sent (slice A); null for an internship from the short form. */
+  placement_submitted_at: string | null;
 }
 
 export interface Entry {

@@ -406,3 +406,69 @@
 .pips-need span[data-on='true'] {
   background: var(--crimson);
 }
+
+/* --- slice A: job details, phone cards (begin) --- */
+.job-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: var(--radius-control);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+
+.job-facts dt {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.job-facts dd {
+  margin: 2px 0 0;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+
+.levels.jf-details {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.jf-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 16px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .jf-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .jf-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.job-item-title,
+.job-item-employer {
+  overflow-wrap: anywhere;
+}
+
+/* On a phone each job is a card. */
+@media (max-width: 600px) {
+  .job-list {
+    gap: 10px;
+  }
+
+  .job-item {
+    border-color: var(--line);
+    background: var(--surface);
+    padding: 14px;
+  }
+}
+/* --- slice A (end) --- */

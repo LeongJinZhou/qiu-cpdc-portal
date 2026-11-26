@@ -1,0 +1,359 @@
+/* Placement form, satisfaction survey and CPDC's placement views (slice A). Tokens from app.css only; no motion on
+   forms and tables. */
+
+.pl-group {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  padding: 18px 20px 20px;
+  margin: 0;
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.pl-group legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 6px;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.pl-group legend svg {
+  color: var(--muted);
+}
+
+.pl-grid-3,
+.pl-grid-4 {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.pl-grid-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 760px) {
+  .pl-grid-3,
+  .pl-grid-4 {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .pl-grid-3 > .field:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 480px) {
+  .pl-group {
+    padding: 14px 14px 16px;
+  }
+
+  .pl-grid-3,
+  .pl-grid-4 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Date inputs have a wide built-in minimum: let them fit their column. */
+.pl-form .input {
+  min-width: 0;
+  width: 100%;
+}
+
+/* Survey: questions, yes/no chips and the 1-5 scale. Native radios stay in the tab order. */
+.pl-question {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.pl-question legend {
+  font-weight: 600;
+  padding: 0;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.pl-choice,
+.pl-rating-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  cursor: pointer;
+  font-weight: 550;
+}
+
+.pl-choice:hover,
+.pl-rating-option:hover {
+  border-color: var(--ink);
+}
+
+.pl-choice[data-checked='true'],
+.pl-rating-option[data-checked='true'] {
+  border-color: var(--crimson);
+  background: var(--crimson-tint);
+}
+
+.pl-choice input,
+.pl-rating-option input {
+  accent-color: var(--crimson);
+  margin: 0;
+}
+
+.pl-choice:has(input:focus-visible),
+.pl-rating-option:has(input:focus-visible) {
+  box-shadow: var(--focus);
+}
+
+.pl-rating {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pl-rating-option {
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 10px 6px;
+  text-align: center;
+}
+
+.pl-rating-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pl-rating-option .num {
+  font-size: 1.15rem;
+  font-weight: 650;
+}
+
+@media (max-width: 480px) {
+  .pl-rating-option .small {
+    font-size: 0.7rem;
+  }
+}
+
+/* Change history */
+.pl-history-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 1.02rem;
+}
+
+.pl-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.pl-history li {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.pl-history li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.pl-history-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+.pl-diff {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.pl-diff div {
+  display: grid;
+  grid-template-columns: minmax(120px, 200px) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.pl-diff dt {
+  color: var(--muted);
+}
+
+.pl-diff dd {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+
+.pl-diff del {
+  color: var(--muted);
+}
+
+.pl-diff ins {
+  text-decoration: none;
+  font-weight: 600;
+}
+
+@media (max-width: 480px) {
+  .pl-diff div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+}
+
+/* CPDC filters and lists */
+.pl-filters {
+  display: grid;
+  gap: 12px;
+}
+
+.pl-range {
+  display: flex;
+  gap: 10px;
+  flex: 1 1 260px;
+}
+
+.pl-range .field {
+  min-width: 0;
+  flex: 1 1 120px;
+}
+
+.pl-exports {
+  padding-top: 4px;
+}
+
+.pl-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pl-row {
+  display: grid;
+  grid-template-columns: minmax(170px, 1fr) minmax(200px, 1.3fr) minmax(280px, 1.2fr) 120px;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+}
+
+.pl-row:first-child {
+  border-top: 0;
+}
+
+.pl-row-who,
+.pl-row-where {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.pl-row-who > .small {
+  margin-left: 42px;
+}
+
+.pl-row-where strong {
+  overflow-wrap: anywhere;
+}
+
+.pl-row-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.pl-row-facts dt {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.pl-row-facts dd {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.pl-row-action {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+@media (max-width: 1100px) {
+  .pl-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .pl-row-action {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .pl-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+}
+
+.pl-totals {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.pl-totals div {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  padding: 12px 14px;
+}
+
+.pl-totals dt {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.pl-totals dd {
+  margin: 4px 0 0;
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+@media (max-width: 760px) {
+  .pl-totals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.pl-table td:first-child {
+  overflow-wrap: anywhere;
+}

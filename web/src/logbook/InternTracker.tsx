@@ -3,13 +3,35 @@ import { ArrowLeft, BookOpen, Search, TriangleAlert } from 'lucide-react';
 import { useState, type FormEvent, type MouseEvent } from 'react';
 import { apiGet, useLoad, type Paged } from '../api';
 import { Pager } from '../admin/Pager';
+import { can, type Me } from '../auth';
+import { PlacementsAdmin } from '../placement/PlacementsAdmin';
+import { SatisfactionAdmin } from '../placement/SatisfactionAdmin';
 import { PageHead } from '../shell/Shell';
 import { Empty, LoadError, PersonName, SkeletonLines } from '../ui/parts';
 import { dayLabel, type InternDetail, type InternRow } from './types';
 import { WeekCard, WeekProgress } from './WeekCard';
 import './logbook.css';
 
-export function InternTracker({ go }: { go: (to: string) => void }) {
+/** /internships: logbook progress, and for placement.manage (slice A) every placement and the satisfaction results. */
+export function InternTracker({ me, go }: { me: Me; go: (to: string) => void }) {
+  const [tab, setTab] = useState<'logbook' | 'placements' | 'satisfaction'>('logbook');
+  if (!can(me, 'placement.manage')) return <LogbookProgress go={go} />;
+  return (
+    <>
+      <PageHead title="Internships">Every intern's placement, logbook progress and satisfaction with their company.</PageHead>
+      <div className="tabs" role="tablist" aria-label="Internships">
+        <button type="button" role="tab" aria-selected={tab === 'logbook'} onClick={() => setTab('logbook')}>Logbook</button>
+        <button type="button" role="tab" aria-selected={tab === 'placements'} onClick={() => setTab('placements')}>Placements</button>
+        <button type="button" role="tab" aria-selected={tab === 'satisfaction'} onClick={() => setTab('satisfaction')}>Satisfaction</button>
+      </div>
+      {tab === 'logbook' && <LogbookProgress go={go} withHead={false} />}
+      {tab === 'placements' && <PlacementsAdmin />}
+      {tab === 'satisfaction' && <SatisfactionAdmin />}
+    </>
+  );
+}
+
+function LogbookProgress({ go, withHead = true }: { go: (to: string) => void; withHead?: boolean }) {
   const [draft, setDraft] = useState({ q: '', attention: '' });
   const [filters, setFilters] = useState(draft);
   const [page, setPage] = useState(1);
@@ -29,7 +51,9 @@ export function InternTracker({ go }: { go: (to: string) => void }) {
 
   return (
     <>
-      <PageHead title="Internships">Every intern's logbook: weeks approved by the industry supervisor, waiting, and returned.</PageHead>
+      {withHead && (
+        <PageHead title="Internships">Every intern's logbook: weeks approved by the industry supervisor, waiting, and returned.</PageHead>
+      )}
       <section className="panel panel-pad">
         <form className="toolbar" onSubmit={apply} style={{ marginBottom: 16 }}>
           <div className="field" style={{ flex: '2 1 240px' }}>

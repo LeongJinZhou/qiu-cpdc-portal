@@ -4,7 +4,7 @@ import { apiGet, useLoad } from '../api';
 import type { Me } from '../auth';
 import { Empty, LoadError, SkeletonLines } from '../ui/parts';
 import { dateLabel } from '../profile/types';
-import { APPLICATION_LABEL, TYPE_LABEL, applicationTone, type MyApplication } from './types';
+import { APPLICATION_LABEL, TYPE_LABEL, applicationTone, dayLabel, type MyApplication } from './types';
 
 export function MyApplications({ me, onOpen }: { me: Me; onOpen: (jobId: number) => void }) {
   const list = useLoad(`my-applications:${me.user.id}`, () => apiGet<{ items: MyApplication[] }>('/api/applications/mine'));
@@ -23,7 +23,8 @@ export function MyApplications({ me, onOpen }: { me: Me; onOpen: (jobId: number)
               <tr>
                 <th>Job</th>
                 <th>Status</th>
-                <th>Sent</th>
+                <th>Applied</th>
+                <th>Closes</th>
                 <th><span className="visually-hidden">CV</span></th>
               </tr>
             </thead>
@@ -39,6 +40,7 @@ export function MyApplications({ me, onOpen }: { me: Me; onOpen: (jobId: number)
                     <div className="small muted num">since {dateLabel(a.status_changed_at)}</div>
                   </td>
                   <td className="small num">{dateLabel(a.created_at)}</td>
+                  <td className="small num">{dayLabel(a.closing_date)}</td>
                   <td>
                     {a.cv_name && (
                       <a className="btn btn-quiet btn-small" href={`/api/applications/${a.id}/cv`} download aria-label={`Download the CV sent for ${a.title}`}>

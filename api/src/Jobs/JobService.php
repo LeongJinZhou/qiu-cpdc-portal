@@ -35,8 +35,8 @@ final class JobService
         $args = [$org, $today];
         if (($filters['q'] ?? '') !== '') {
             $like = '%' . addcslashes($filters['q'], '%_\\') . '%';
-            $where .= ' AND (j.title LIKE ? OR e.name LIKE ? OR j.description LIKE ?)';
-            array_push($args, $like, $like, $like);
+            $where .= ' AND (j.title LIKE ? OR e.name LIKE ? OR j.description LIKE ? OR j.location LIKE ?)';
+            array_push($args, $like, $like, $like, $like);
         }
         if (isset($filters['type'])) {
             $where .= ' AND j.job_type = ?';

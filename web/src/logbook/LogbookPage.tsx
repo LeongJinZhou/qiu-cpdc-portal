@@ -6,17 +6,23 @@ import type { Me } from '../auth';
 import { dateLabel } from '../profile/types';
 import { PageHead } from '../shell/Shell';
 import { Empty, errorText, LoadError, Notice, SkeletonLines, Spinner } from '../ui/parts';
-import { InternshipForm } from './InternshipForm';
+import { PlacementLoadState, PlacementPanel, SurveyPanel, usePlacement } from '../placement/PlacementPanels';
+import type { MyPlacement } from '../placement/types';
 import { dayLabel, type Entry, type Logbook } from './types';
 import { WeekCard, WeekProgress } from './WeekCard';
 import { WeekForm } from './WeekForm';
 import './logbook.css';
 
-type Editing = { kind: 'none' } | { kind: 'new' } | { kind: 'edit'; entry: Entry } | { kind: 'internship' };
+type Editing = { kind: 'none' } | { kind: 'new' } | { kind: 'edit'; entry: Entry };
 
 export function LogbookPage({ me }: { me: Me }) {
   const load = useLoad('logbook', () => apiGet<Logbook>('/api/logbook'));
   const [fresh, setFresh] = useState<Logbook | null>(null);
+  // slice A: placement form and survey tabs
+  const placement = usePlacement();
+  const [placementFresh, setPlacementFresh] = useState<MyPlacement | null>(null);
+  const [tab, setTab] = useState<'weeks' | 'placement' | 'survey'>('weeks');
+  const mine = placementFresh ?? placement.data;
   const [editing, setEditing] = useState<Editing>({ kind: 'none' });
   const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string; id?: number } | null>(null);
   const [busy, setBusy] = useState<number | null>(null);
@@ -51,27 +57,42 @@ export function LogbookPage({ me }: { me: Me }) {
       .finally(() => setBusy(null));
   };
 
-  if (!internship || editing.kind === 'internship') {
+  // ---- slice A: the placement form and survey share this page ----
+  const placementSaved = (saved: MyPlacement) => {
+    setPlacementFresh(saved);
+    setFresh(null);
+    load.reload();
+  };
+  if (!internship) {
     return (
       <>
         <PageHead title="Internship logbook">
-          Log each week of your internship. Your industry supervisor approves it from an email link.
+          Log each week of your internship. Start with your placement details; your industry supervisor approves each
+          week from an email link.
         </PageHead>
-        <section className="panel panel-pad stack" aria-labelledby="lb-internship">
-          <h2 id="lb-internship">{internship ? 'Change your internship' : 'Your internship'}</h2>
-          <InternshipForm
-            internship={internship}
-            csrf={me.csrf_token}
-            onCancel={internship ? () => setEditing({ kind: 'none' }) : undefined}
-            onSaved={(saved) => {
-              setFresh(saved);
-              setEditing({ kind: 'none' });
-            }}
-          />
-        </section>
+        {mine ? <PlacementPanel me={me} mine={mine} onSaved={placementSaved} /> : <PlacementLoadState load={placement} />}
       </>
     );
   }
+  const tabs = (
+    <div className="tabs" role="tablist" aria-label="Internship">
+      <button type="button" role="tab" aria-selected={tab === 'weeks'} onClick={() => setTab('weeks')}>Logbook</button>
+      <button type="button" role="tab" aria-selected={tab === 'placement'} onClick={() => setTab('placement')}>Placement</button>
+      <button type="button" role="tab" aria-selected={tab === 'survey'} onClick={() => setTab('survey')}>Survey</button>
+    </div>
+  );
+  if (tab !== 'weeks') {
+    return (
+      <>
+        <PageHead title="Internship logbook">Your placement details and, at the end, the satisfaction survey.</PageHead>
+        {tabs}
+        {!mine && <PlacementLoadState load={placement} />}
+        {mine && tab === 'placement' && <PlacementPanel me={me} mine={mine} onSaved={placementSaved} onCancel={() => setTab('weeks')} />}
+        {mine && tab === 'survey' && <SurveyPanel me={me} mine={mine} onSaved={setPlacementFresh} />}
+      </>
+    );
+  }
+  // ---- slice A: end ----
 
   return (
     <>
@@ -87,6 +108,15 @@ export function LogbookPage({ me }: { me: Me }) {
       >
         Your supervisor approves each week from an email link. CPDC sees your progress.
       </PageHead>
+      {tabs}
+      {!internship.placement_submitted_at && (
+        <Notice tone="info">
+          <div className="row">
+            <span>CPDC now asks for your full placement details (address, batch, allowance, HR contact).</span>
+            <button type="button" className="btn btn-small" onClick={() => setTab('placement')}>Complete placement form</button>
+          </div>
+        </Notice>
+      )}
 
       <div className="lb-grid">
         <div className="stack">
@@ -144,7 +174,7 @@ export function LogbookPage({ me }: { me: Me }) {
               <h2 id="lb-where" className="lb-side-title">
                 <Building2 size={17} aria-hidden="true" /> {internship.company}
               </h2>
-              <button type="button" className="btn btn-quiet btn-small" onClick={() => setEditing({ kind: 'internship' })}>
+              <button type="button" className="btn btn-quiet btn-small" onClick={() => setTab('placement')}>
                 <Pencil size={14} aria-hidden="true" /> Change
               </button>
             </div>

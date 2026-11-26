@@ -46,6 +46,47 @@ export interface SkillNeed {
   level: number;
 }
 
+// --- slice A: job details (begin) ---
+export type PayFrequency = 'monthly' | 'hourly' | 'lump_sum' | 'unpaid' | 'negotiable';
+
+export const PAY_LABEL: Record<PayFrequency, string> = {
+  monthly: 'per month',
+  hourly: 'per hour',
+  lump_sum: 'lump sum',
+  unpaid: 'Unpaid',
+  negotiable: 'Negotiable',
+};
+
+/** The optional detail CPDC adds to a job (api/src/Jobs/JobDetails.php). */
+export interface JobExtras {
+  specializations: string[];
+  vacancy_count: number | null;
+  duration_months: number | null;
+  salary_min: number | null;
+  salary_max: number | null;
+  pay_frequency: PayFrequency | null;
+  min_qualification: string | null;
+  work_experience: string | null;
+  other_requirements: string | null;
+  benefits: string | null;
+  country: string | null;
+  state: string | null;
+  contact_email: string | null;
+  attachment_name: string | null;
+  has_brochure: boolean;
+}
+
+/** "RM 1,200 - 1,500 per month", "Unpaid", "Negotiable", or null when nothing is said about pay. */
+export function payLabel(job: Pick<JobExtras, 'salary_min' | 'salary_max' | 'pay_frequency'>): string | null {
+  const { salary_min: min, salary_max: max, pay_frequency: pay } = job;
+  if (pay === 'unpaid' || pay === 'negotiable') return PAY_LABEL[pay];
+  if (min === null && max === null) return null;
+  const rm = (n: number) => n.toLocaleString('en-MY', { maximumFractionDigits: 2 });
+  const range = min !== null && max !== null && min !== max ? `${rm(min)} - ${rm(max)}` : rm((min ?? max) as number);
+  return `RM ${range}${pay ? ` ${PAY_LABEL[pay]}` : ''}`;
+}
+// --- slice A (end) ---
+
 export interface JobSummary {
   id: number;
   title: string;
@@ -55,6 +96,12 @@ export interface JobSummary {
   location: string;
   closing_date: string;
   my_status: ApplicationStatus | null;
+  // slice A
+  state: string | null;
+  specializations: string[];
+  salary_min: number | null;
+  salary_max: number | null;
+  pay_frequency: PayFrequency | null;
 }
 
 export interface MyApplication {
@@ -71,7 +118,7 @@ export interface MyApplication {
   cv_name: string | null;
 }
 
-export interface JobDetail extends Omit<JobSummary, 'my_status'> {
+export interface JobDetail extends Omit<JobSummary, 'my_status'>, JobExtras {
   open: boolean;
   description: string;
   employer: {
@@ -110,7 +157,7 @@ export interface ManagedJob {
   new_applications: number;
 }
 
-export interface JobForEdit {
+export interface JobForEdit extends JobExtras {
   id: number;
   employer_id: number;
   employer_name: string;
