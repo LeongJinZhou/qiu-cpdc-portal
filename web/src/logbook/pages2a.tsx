@@ -4,6 +4,8 @@ import type { ReactNode } from 'react';
 import { can, type Me } from '../auth';
 import { AssessmentAdminList, AssessmentEditorPage } from '../assessment/AssessmentBuilder';
 import { AssessmentList, TakeAssessment } from '../assessment/AssessmentsPage';
+import { AssessmentInsightsPage } from '../assessment/AssessmentInsights'; // slice B
+import { OwnReportPage } from '../assessment/AttemptReport'; // slice B
 import { MyProject } from '../showcase/MyProject';
 import { ProjectPage, TalentFeed } from '../showcase/TalentFeed';
 import { InternDetailPage, InternTracker } from './InternTracker';
@@ -33,6 +35,11 @@ export function signedInPage2a(path: string, me: Me, go: (to: string) => void): 
       return page('showcase.browse', id ? <ProjectPage key={id} id={id} go={go} /> : rest ? null : <TalentFeed go={go} />);
     case 'assessments':
       return page('assessment.take', id ? <TakeAssessment key={id} id={id} me={me} go={go} /> : rest ? null : <AssessmentList go={go} />);
+    // slice B: a taker's printable report, and CPDC's results and reflections of one assessment
+    case 'assessment-report':
+      return id && can(me, 'assessment.take') ? { nav: '/assessments', element: <OwnReportPage key={id} id={id} go={go} /> } : null;
+    case 'assessment-insights':
+      return id && can(me, 'assessment.manage') ? { nav: '/assessment-builder', element: <AssessmentInsightsPage key={id} id={id} go={go} /> } : null;
     case 'assessment-builder':
       return page(
         'assessment.manage',

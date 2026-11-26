@@ -17,6 +17,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+  align-items: start;
 }
 
 @media (max-width: 560px) {
@@ -77,6 +78,109 @@
   position: sticky;
   top: 84px;
   overflow-x: auto;
+}
+
+/* slice B: folding sections, lists, consent */
+.cv-editor {
+  gap: 0;
+}
+
+.cv-fold + .cv-fold,
+.cv-fold + .cv-consent {
+  border-top: 1px solid var(--line);
+}
+
+.cv-fold-h {
+  margin: 0;
+  font-size: 1.02rem;
+}
+
+.cv-fold-h button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 4px;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--radius-control);
+}
+
+.cv-fold-h button:hover {
+  background: var(--surface-2);
+}
+
+.cv-fold-note {
+  font-family: var(--font-sans);
+  font-weight: 450;
+}
+
+.cv-fold-chevron {
+  margin-left: auto;
+  flex: none;
+  transition: transform 160ms var(--ease-out);
+}
+
+.cv-fold-h button[aria-expanded='true'] .cv-fold-chevron {
+  transform: rotate(180deg);
+}
+
+.cv-fold-body {
+  padding: 2px 4px 20px;
+}
+
+.cv-fold-body[hidden] {
+  display: none;
+}
+
+.cv-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.cv-add {
+  justify-self: start;
+}
+
+.cv-entry-foot {
+  justify-content: space-between;
+}
+
+.cv-verified .row {
+  flex-wrap: wrap;
+}
+
+.cv-consent {
+  display: grid;
+  gap: 8px;
+  padding: 16px 4px;
+}
+
+.cv-consent-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.02rem;
+}
+
+.cv-save {
+  margin-top: 6px;
+}
+
+.cv-refs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 24px;
+}
+
+.cv-refs .cv-entry + .cv-entry {
+  margin-top: 0;
 }
 
 .cv-sheet {

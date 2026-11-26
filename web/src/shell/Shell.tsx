@@ -6,6 +6,7 @@ import { BadgeCheck, BookOpenCheck, BriefcaseBusiness, Building2, Gauge } from '
 import { CalendarDays, FileText, Route } from 'lucide-react';
 // slice 3b icons
 import { HandHelping, ListChecks, MessagesSquare, Network } from 'lucide-react';
+import { ChartColumn, House, MessageSquareHeart } from 'lucide-react'; // slice B
 import { can, ROLE_LABEL, type Me } from '../auth';
 import { Avatar } from '../ui/parts';
 import { NAV_2A } from '../logbook/nav2a'; // slice 2a
@@ -19,6 +20,7 @@ interface NavItem {
 }
 
 export const NAV: NavItem[] = [
+  { path: '/home', label: 'Home', icon: House, permission: 'home.view' }, // slice B: first, so it is the landing page
   { path: '/profile', label: 'My profile', icon: UserRound, permission: 'profile.own' },
   { path: '/alumni', label: 'Alumni tracker', icon: GraduationCap, permission: 'alumni.track' },
   { path: '/people', label: 'People', icon: Users, permission: 'people.view' },
@@ -42,21 +44,33 @@ export const NAV: NavItem[] = [
   { path: '/mentoring', label: 'Mentoring activity', icon: HandHelping, permission: 'mentoring.activity' },
   { path: '/questions', label: 'Interview questions', icon: ListChecks, permission: 'interview.bank' },
   // --- slice 3b (end) ---
+  // --- slice B (begin) ---
+  { path: '/surveys', label: 'Yearly survey', icon: MessageSquareHeart, permission: 'survey.take' },
+  { path: '/surveys/manage', label: 'Survey results', icon: ChartColumn, permission: 'survey.manage' },
+  // --- slice B (end) ---
 ];
 
 /** Menu sections. NAV keeps its order (the first allowed item is the person's home); this only groups it. */
 const GROUPS: { label: string; paths: string[] }[] = [
   {
     label: 'My career',
-    paths: ['/profile', '/cv', '/skills', '/learning', '/logbook', '/my-project', '/assessments', '/career-path'],
+    paths: ['/home', '/profile', '/cv', '/skills', '/learning', '/logbook', '/my-project', '/assessments', '/surveys',
+      '/career-path'],
   },
   { label: 'Opportunities', paths: ['/jobs', '/workshops', '/network', '/interview'] },
   {
     label: 'CPDC',
     paths: ['/alumni', '/people', '/registrations', '/internships', '/showcase', '/employers', '/learning-checks',
-      '/assessment-builder', '/mentoring', '/questions', '/audit'],
+      '/assessment-builder', '/surveys/manage', '/mentoring', '/questions', '/audit'],
   },
 ];
+
+/** The menu item for a path: the exact item, or the longest item the path sits under (/surveys/manage over /surveys). */
+export function currentNav(path: string, to: string, items: NavItem[]): boolean {
+  if (path === to) return true;
+  if (!path.startsWith(`${to}/`)) return false;
+  return !items.some((item) => item.path !== to && item.path.length > to.length && (path === item.path || path.startsWith(`${item.path}/`)));
+}
 
 export function navGroups(items: NavItem[]): { label: string; items: NavItem[] }[] {
   const grouped = GROUPS.map((group) => ({
@@ -149,7 +163,7 @@ export function Shell({
             <div key={group.label} className="shell-nav-group">
               <h2>{group.label}</h2>
               {group.items.map(({ path: to, label, icon: Icon }) => (
-                <a key={to} href={to} onClick={follow(to)} aria-current={path === to || path.startsWith(`${to}/`) ? 'page' : undefined}>
+                <a key={to} href={to} onClick={follow(to)} aria-current={currentNav(path, to, NAV) ? 'page' : undefined}>
                   <Icon size={16} aria-hidden="true" />
                   {label}
                 </a>

@@ -57,6 +57,7 @@ test('workshop RSVP and check-in, CV builder and career path', async ({ page }) 
 
   await page.getByRole('link', { name: 'CV builder' }).click();
   await page.getByLabel('Headline').fill('Data student at QIU');
+  await page.getByRole('button', { name: /^Extra sections/ }).click(); // a folded section since slice B
   await page.getByRole('button', { name: 'Projects' }).click();
   await page.getByLabel('Heading').fill('Fake attendance dashboard');
   await page.getByRole('button', { name: 'Save CV' }).click();

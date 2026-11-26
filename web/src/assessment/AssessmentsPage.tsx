@@ -1,5 +1,5 @@
 // Students and alumni: published self-assessments, taking one, and the result (worked out on the server).
-import { ArrowLeft, ClipboardCheck, RotateCcw } from 'lucide-react';
+import { ArrowLeft, ClipboardCheck, Printer, RotateCcw } from 'lucide-react';
 import { useState, type FormEvent, type MouseEvent } from 'react';
 import { apiGet, apiWrite, useLoad } from '../api';
 import type { Me } from '../auth';
@@ -38,6 +38,11 @@ export function AssessmentList({ go }: { go: (to: string) => void }) {
             </div>
             <div className="as-item-side">
               {a.latest && <ResultChip result={a.latest} />}
+              {a.latest?.attempt_id && (
+                <a className="btn btn-small btn-quiet" href={`/assessment-report/${a.latest.attempt_id}`} onClick={(e) => { e.preventDefault(); go(`/assessment-report/${a.latest?.attempt_id ?? ''}`); }}>
+                  <Printer size={15} aria-hidden="true" /> Report
+                </a>
+              )}
               <a className={`btn btn-small${a.latest ? '' : ' btn-primary'}`} href={`/assessments/${a.id}`} onClick={open(a.id)}>
                 {a.latest ? 'Take again' : 'Start'}
               </a>
@@ -52,6 +57,8 @@ export function AssessmentList({ go }: { go: (to: string) => void }) {
 export function TakeAssessment({ id, me, go }: { id: number; me: Me; go: (to: string) => void }) {
   const load = useLoad(`assessment:${id}`, () => apiGet<Taking>(`/api/assessments/${id}`));
   const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [reflections, setReflections] = useState<string[]>([]);
+  const [semester, setSemester] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [result, setResult] = useState<Result | null>(null);
@@ -65,7 +72,11 @@ export function TakeAssessment({ id, me, go }: { id: number; me: Me; go: (to: st
     event.preventDefault();
     setBusy(true);
     setError(null);
-    const body = { answers: Object.entries(answers).map(([q, o]) => ({ question_id: Number(q), option_id: o })) };
+    const body = {
+      answers: Object.entries(answers).map(([q, o]) => ({ question_id: Number(q), option_id: o })),
+      reflections: a ? a.reflection_prompts.map((_, i) => reflections[i] ?? '') : [],
+      semester: semester === '' ? null : Number(semester),
+    };
     apiWrite<Result>('POST', `/api/assessments/${id}/attempts`, body, me.csrf_token)
       .then((r) => {
         setResult(r);
@@ -73,7 +84,14 @@ export function TakeAssessment({ id, me, go }: { id: number; me: Me; go: (to: st
       }, setError)
       .finally(() => setBusy(false));
   };
+  const restart = () => {
+    setResult(null);
+    setAnswers({});
+    setReflections([]);
+  };
   const answered = a ? a.questions.filter((q) => answers[q.id] !== undefined).length : 0;
+  const written = a ? a.reflection_prompts.filter((_, i) => (reflections[i] ?? '').trim() !== '').length : 0;
+  const ready = a !== undefined && answered === a.questions.length && written === a.reflection_prompts.length;
 
   return (
     <div className="as-page">
@@ -93,7 +111,12 @@ export function TakeAssessment({ id, me, go }: { id: number; me: Me; go: (to: st
               {a.title}: {result.score} of {result.max_score} points. Saved to your profile.
             </p>
             <div className="row">
-              <button type="button" className="btn btn-small" onClick={() => { setResult(null); setAnswers({}); }}>
+              {result.attempt_id && (
+                <a className="btn btn-small btn-primary" href={`/assessment-report/${result.attempt_id}`} onClick={(e) => { e.preventDefault(); go(`/assessment-report/${result.attempt_id ?? ''}`); }}>
+                  <Printer size={15} aria-hidden="true" /> Open printable report
+                </a>
+              )}
+              <button type="button" className="btn btn-small" onClick={restart}>
                 <RotateCcw size={15} aria-hidden="true" /> Take again
               </button>
               <a className="btn btn-small btn-quiet" href="/profile" onClick={(e) => { e.preventDefault(); go('/profile'); }}>
@@ -106,25 +129,76 @@ export function TakeAssessment({ id, me, go }: { id: number; me: Me; go: (to: st
       {a && !result && (
         <form className="stack" onSubmit={submit}>
           <PageHead title={a.title}>{a.description}</PageHead>
-          {a.questions.map((q, i) => (
-            <fieldset key={q.id} className="panel panel-pad as-question">
-              <legend>
-                <span className="muted num">{i + 1}.</span> {q.prompt}
-              </legend>
-              {q.options.map((o) => (
-                <label key={o.id} className="as-option">
-                  <input type="radio" name={`q-${q.id}`} checked={answers[q.id] === o.id} onChange={() => setAnswers({ ...answers, [q.id]: o.id })} />
-                  <span>{o.label}</span>
-                </label>
+          {a.answer_style === 'likert' ? (
+            <section className="panel panel-pad as-likert" aria-label="Rate yourself">
+              <p className="small muted">Rate yourself on each one, from 1 (Very Poor) to 5 (Excellent).</p>
+              {a.questions.map((q, i) => (
+                <fieldset key={q.id} className="as-likert-row">
+                  <legend>
+                    <span className="muted num">{i + 1}.</span> {q.prompt}
+                  </legend>
+                  <div className="as-scale">
+                    {q.options.map((o, k) => (
+                      <label key={o.id} className="as-scale-step">
+                        <input type="radio" name={`q-${q.id}`} checked={answers[q.id] === o.id} onChange={() => setAnswers({ ...answers, [q.id]: o.id })} />
+                        <span className="num">{k + 1}</span>
+                        <span className="as-scale-label">{o.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
               ))}
-            </fieldset>
-          ))}
+            </section>
+          ) : (
+            a.questions.map((q, i) => (
+              <fieldset key={q.id} className="panel panel-pad as-question">
+                <legend>
+                  <span className="muted num">{i + 1}.</span> {q.prompt}
+                </legend>
+                {q.options.map((o) => (
+                  <label key={o.id} className="as-option">
+                    <input type="radio" name={`q-${q.id}`} checked={answers[q.id] === o.id} onChange={() => setAnswers({ ...answers, [q.id]: o.id })} />
+                    <span>{o.label}</span>
+                  </label>
+                ))}
+              </fieldset>
+            ))
+          )}
+          {a.reflection_prompts.length > 0 && (
+            <section className="panel panel-pad stack" aria-labelledby="as-reflect-h">
+              <h2 id="as-reflect-h" className="as-side-title">Your commitments</h2>
+              {a.reflection_prompts.map((prompt, i) => (
+                <div key={prompt} className="field">
+                  <label htmlFor={`as-r-${i}`}>{prompt}</label>
+                  <textarea
+                    id={`as-r-${i}`}
+                    className="textarea"
+                    rows={3}
+                    maxLength={2000}
+                    required
+                    value={reflections[i] ?? ''}
+                    onChange={(e) => setReflections(a.reflection_prompts.map((_, j) => (j === i ? e.target.value : reflections[j] ?? '')))}
+                  />
+                </div>
+              ))}
+              <div className="field as-semester">
+                <label htmlFor="as-sem">Your semester (optional)</label>
+                <select id="as-sem" className="select" value={semester} onChange={(e) => setSemester(e.target.value)}>
+                  <option value="">Not given</option>
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <option key={i + 1} value={i + 1}>Semester {i + 1}</option>
+                  ))}
+                </select>
+              </div>
+            </section>
+          )}
           {error !== null && <Notice tone="error">{errorText(error)}</Notice>}
           <div className="as-submit">
             <span className="small muted num">
-              {answered} of {a.questions.length} answered
+              {answered} of {a.questions.length} rated
+              {a.reflection_prompts.length > 0 && `, ${written} of ${a.reflection_prompts.length} written`}
             </span>
-            <button type="submit" className="btn btn-primary" disabled={busy || answered < a.questions.length}>
+            <button type="submit" className="btn btn-primary" disabled={busy || !ready}>
               {busy && <Spinner />} See my result
             </button>
           </div>

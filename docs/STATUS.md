@@ -30,9 +30,31 @@
 - Local dev on Windows: `php -S` hangs; `tools/php-dev-server.mjs` replaces it. PHPStan's parallel workers can hang:
   `--debug` runs it serially.
 - No production sweep yet ("production" before real students use it).
+<!-- slice B open (begin) -->
+- Slice B, after merging with slice A: pass slice A's "satisfaction survey still due" check to `HomeService`
+  (`$satisfactionPending` closure in `HomeController`); until then the home to-do leaves that task out.
+- Slice B migrations ran on MySQL 8.4 only here (no local MariaDB); check 0501, 0504, 0505 on MariaDB 10.11 before
+  the Exabytes upload. Support units in the survey are named as in ACMS (SARD, SRD, SLD, FAD, ISO): CPDC may want
+  their full names on screen.
+<!-- slice B open (end) -->
 
 ## Next step
 Founder sets up the Render database and keys; then the lead checks sign-in and each module live.
+
+<!-- slice B done (begin) -->
+## Done: slice B of the ACMS port, 2026-11-26 (branch claude/slice-b-surveys-5fc760)
+- Home page for everyone (landing page): workshops with RSVP, to-do list, job applications, shortcuts.
+- Self-assessments: 1-5 rating style, required written reflections, semester, printable A4 report; CPDC trait
+  averages per faculty and semester and audited reading of reflections; seeded Student Characteristics assessment.
+- Yearly University and Programme Survey: 7 ACMS sections in one PHP definition, wizard with server drafts, N/A on
+  services, receipt; CPDC rounds, response rate per faculty and programme, means without N/A, comments, CSV.
+- CV builder: folding sections, CGPA and intake, courses, awards (from verified learning), co-curricular,
+  references, PDPA consent to share with partner employers; inline checks.
+- CSV helper also escapes the full-width at sign. Seed: fake students, an open round, fake answers and results.
+- Checks: 316 PHPUnit, PHPStan level 8, PHPCS, ESLint, TypeScript, 24 Vitest, build, all 7 Playwright specs incl.
+  the new e2e/home-surveys-assessment.spec.ts at 1280px and 390px, gitleaks. Every new screen looked at in a
+  browser at desktop and 390px (no horizontal overflow).
+<!-- slice B done (end) -->
 
 ## Done: slices 2 and 3, 2026-11-26 (four parallel sessions, merged into main)
 - 2a: internship logbook with supervisor approval by single-use emailed link (no login), CPDC intern progress; FYP
