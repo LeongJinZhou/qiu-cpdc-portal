@@ -19,7 +19,12 @@ test('student onboarding, LinkedIn PDF import and the alumni tracker', async ({ 
   await page.getByRole('link', { name: 'Sign in with LinkedIn' }).click();
   await page.getByRole('link', { name: /\(student\)$/ }).click();
   await expect(page.getByText('LinkedIn is linked to your QIU account.')).toBeVisible();
-  await page.getByLabel('I follow Quest International University on LinkedIn.').check();
+  const follow = page.getByLabel('I follow Quest International University on LinkedIn.');
+  await expect(follow).toBeDisabled(); // unlocks only after the QIU page was opened
+  const qiuPage = page.waitForEvent('popup');
+  await page.getByRole('link', { name: 'Open QIU on LinkedIn and click Follow' }).click();
+  await (await qiuPage).close();
+  await follow.check();
   await page.getByLabel('Profile link').fill('linkedin.com/in/fake-student');
   await page.getByLabel('I agree that CPDC keeps and uses my career profile as described.').check();
   await page.getByRole('button', { name: 'Finish and open my profile' }).click();

@@ -10,6 +10,9 @@ export async function onboardIfAsked(page: Page, linkedinPersona: string, profil
   if (page.url().endsWith('/onboarding')) {
     await page.getByRole('link', { name: 'Sign in with LinkedIn' }).click();
     await page.getByRole('link', { name: new RegExp(`\\(${linkedinPersona}\\)$`) }).click();
+    const qiuPage = page.waitForEvent('popup');
+    await page.getByRole('link', { name: 'Open QIU on LinkedIn and click Follow' }).click();
+    await (await qiuPage).close();
     await page.getByLabel('I follow Quest International University on LinkedIn.').check();
     await page.getByLabel('Profile link').fill(profileUrl);
     await page.getByLabel('I agree that CPDC keeps and uses my career profile as described.').check();

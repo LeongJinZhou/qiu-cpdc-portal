@@ -13,6 +13,8 @@ const LINKEDIN_URL = /^(https?:\/\/)?([a-z]{2,3}\.|www\.)?linkedin\.com\/in\/[A-
 export function Onboarding({ me, linkResult, onDone }: { me: Me; linkResult: string | null; onDone: () => void }) {
   const state = me.onboarding;
   const [followed, setFollowed] = useState(state.follow_confirmed);
+  // LinkedIn tells no app who follows a page, so the tick unlocks only after the QIU page was opened from here.
+  const [openedQiu, setOpenedQiu] = useState(state.follow_confirmed);
   const [profileUrl, setProfileUrl] = useState(state.profile_url ?? '');
   const [consent, setConsent] = useState(state.consent_given);
   const [urlError, setUrlError] = useState<string | null>(null);
@@ -84,15 +86,22 @@ export function Onboarding({ me, linkResult, onDone }: { me: Me; linkResult: str
               <h2>Follow QIU on LinkedIn</h2>
               <p>CPDC shares jobs, internships and events there.</p>
               <div className="row">
-                <a className="btn btn-small" href={me.qiu_linkedin_url} target="_blank" rel="noopener noreferrer">
-                  Open QIU on LinkedIn
+                <a
+                  className={openedQiu ? 'btn btn-small' : 'btn btn-small btn-primary'}
+                  href={me.qiu_linkedin_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setOpenedQiu(true)}
+                >
+                  Open QIU on LinkedIn and click Follow
                   <ExternalLink size={14} aria-hidden="true" />
                 </a>
               </div>
               <label className="check">
-                <input type="checkbox" checked={followed} onChange={(e) => setFollowed(e.target.checked)} />
+                <input type="checkbox" checked={followed} disabled={!openedQiu} onChange={(e) => setFollowed(e.target.checked)} />
                 <span>I follow Quest International University on LinkedIn.</span>
               </label>
+              {!openedQiu && <p className="small muted">Open the QIU page first, then tick this.</p>}
             </div>
           </li>
           <li className="step" data-done={urlDone} data-current={linked && followed && !urlDone}>
@@ -100,6 +109,13 @@ export function Onboarding({ me, linkResult, onDone }: { me: Me; linkResult: str
             <div className="step-body">
               <h2>Your LinkedIn profile link</h2>
               <p>LinkedIn does not share this link with us, so paste it here. Staff and CPDC open it from your name.</p>
+              <div className="row">
+                {/* linkedin.com/in/me opens the signed-in person's own profile, so the address is ready to copy. */}
+                <a className="btn btn-small" href="https://www.linkedin.com/in/me/" target="_blank" rel="noopener noreferrer">
+                  Open my LinkedIn profile
+                  <ExternalLink size={14} aria-hidden="true" />
+                </a>
+              </div>
               <div className="field">
                 <label htmlFor="profile-url">Profile link</label>
                 <input
@@ -117,8 +133,8 @@ export function Onboarding({ me, linkResult, onDone }: { me: Me; linkResult: str
                   <span className="error" id="profile-url-hint">{urlError}</span>
                 ) : (
                   <span className="hint" id="profile-url-hint">
-                    On LinkedIn, open your profile and copy the address from the browser, or tap Share and Copy link in
-                    the app.
+                    Copy the address from the browser bar of the page that opens, then paste it here. In the app: Share,
+                    then Copy link.
                   </span>
                 )}
               </div>
