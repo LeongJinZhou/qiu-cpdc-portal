@@ -35,6 +35,11 @@ import { QuestionBank } from './interview/QuestionBank';
 import { MentoringActivity } from './network/MentoringActivity';
 import { NetworkPage } from './network/NetworkPage';
 // --- slice 3b (end) ---
+// --- slice B (begin) ---
+import { HomePage } from './home/HomePage';
+import { SurveyManage } from './survey/SurveyManage';
+import { SurveyPage } from './survey/SurveyPage';
+// --- slice B (end) ---
 
 type State = { kind: 'loading' } | { kind: 'error'; error: unknown } | { kind: 'out' } | { kind: 'in'; me: Me };
 
@@ -62,6 +67,12 @@ const TITLES: Record<string, string> = {
   '/mentoring': 'Mentoring activity',
   '/questions': 'Interview questions',
   // --- slice 3b (end) ---
+  // --- slice B (begin) ---
+  '/home': 'Home',
+  '/surveys': 'University and Programme Survey',
+  '/assessment-report': 'Self-assessment report',
+  '/assessment-insights': 'Assessment results',
+  // --- slice B (end) ---
 };
 
 export function App() {
@@ -144,7 +155,8 @@ export function App() {
   }
   // ---- slice 2a: end ----
   const personId = /^\/people\/(\d+)$/.exec(path)?.[1];
-  const page = personId && can(me, 'people.view') ? '/people/:id' : allowed.includes(base) && base === path ? base : null;
+  // A menu path, exactly (two-part paths such as /surveys/manage are menu items of their own).
+  const page = personId && can(me, 'people.view') ? '/people/:id' : allowed.includes(path) ? path : null;
   if (page === null && path !== home) {
     window.history.replaceState({}, '', home);
     queueMicrotask(() => setPath(home));
@@ -185,6 +197,11 @@ export function App() {
       {page === '/mentoring' && <MentoringActivity />}
       {page === '/questions' && <QuestionBank me={me} />}
       {/* --- slice 3b (end) --- */}
+      {/* --- slice B (begin) --- */}
+      {page === '/home' && <HomePage me={me} go={go} />}
+      {page === '/surveys' && <SurveyPage me={me} go={go} />}
+      {page === '/surveys/manage' && <SurveyManage me={me} />}
+      {/* --- slice B (end) --- */}
     </Shell>
   );
 }

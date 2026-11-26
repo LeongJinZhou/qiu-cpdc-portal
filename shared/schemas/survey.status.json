@@ -1,0 +1,9 @@
+{
+  "$comment": "PATCH /api/surveys/manage/{id}/status: open or close a survey round.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status"],
+  "properties": {
+    "status": { "enum": ["open", "closed"] }
+  }
+}

@@ -1,0 +1,130 @@
+/* Home overview. Tokens from app.css only. */
+
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.home-tasks {
+  grid-row: span 2;
+}
+
+.home-shortcuts {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 900px) {
+  .home-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-tasks {
+    grid-row: auto;
+  }
+}
+
+.home-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.home-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.home-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+}
+
+.home-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.home-list li:first-child {
+  border-top: 0;
+}
+
+.home-task {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  color: var(--ink);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+a.home-task:hover span:first-child {
+  color: var(--crimson);
+  text-decoration: underline;
+}
+
+.home-list li[data-done='true'] .home-task > span:first-child {
+  color: var(--muted);
+}
+
+.home-done {
+  color: var(--ok);
+  flex: none;
+}
+
+.home-open {
+  color: var(--line-strong);
+  flex: none;
+}
+
+.home-date {
+  flex: none;
+  width: 46px;
+  display: grid;
+  justify-items: center;
+  padding: 4px 0;
+  border-radius: var(--radius-control);
+  background: var(--canvas);
+  line-height: 1.1;
+}
+
+.home-date strong {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+}
+
+.home-date span {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.home-count strong {
+  font-family: var(--font-heading);
+  font-size: 1.7rem;
+  font-weight: 600;
+}
+
+.home-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+@media (max-width: 480px) {
+  .home-shortcuts .btn {
+    flex: 1 1 calc(50% - 10px);
+    justify-content: center;
+  }
+}

@@ -207,6 +207,23 @@ final class PlacementTest extends HttpTestCase
         $this->refused('PUT', '/api/placement/satisfaction', self::SURVEY, 409, 'NO_INTERNSHIP');
     }
 
+    public function testTheHomeToDoAsksForTheSurveyOnlyAfterTheInternshipEnded(): void
+    {
+        $this->signInAs('student');
+        $satisfactionTask = function (): ?bool {
+            $tasks = array_column($this->body($this->send('GET', '/api/home'))['tasks'], 'done', 'key');
+
+            return $tasks['satisfaction'] ?? null;
+        };
+        $this->assertNull($satisfactionTask(), 'no internship, no task');
+        $this->savePlacement();
+        $this->assertNull($satisfactionTask(), 'the internship ends in March 2027: not asked yet');
+        $this->savePlacement(['end_date' => '2027-01-08', 'change_reason' => 'date_change']);
+        $this->assertFalse($satisfactionTask(), 'ended a week ago without an answer');
+        $this->json('PUT', '/api/placement/satisfaction', self::SURVEY);
+        $this->assertTrue($satisfactionTask(), 'answered');
+    }
+
     public function testOnlyStudentsKeepAPlacementAndOnlyCpdcSeesEveryone(): void
     {
         $this->signInAs('staff');

@@ -1,0 +1,9 @@
+{
+  "$comment": "GET /api/surveys/manage/{id}/comments: the comments of one section (a SurveyForm section key or future_skills).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["section"],
+  "properties": {
+    "section": { "type": "string", "pattern": "^[a-z_]{1,40}$" }
+  }
+}

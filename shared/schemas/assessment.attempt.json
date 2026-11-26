@@ -1,5 +1,5 @@
 {
-  "$comment": "POST /api/assessments/{id}/attempts: one chosen option per question. The server checks every question is answered once and scores it.",
+  "$comment": "POST /api/assessments/{id}/attempts: one chosen option per question, one written answer per reflection prompt (in order) and the person's semester. The server checks every question is answered once and scores it.",
   "type": "object",
   "additionalProperties": false,
   "required": ["answers"],
@@ -17,6 +17,12 @@
           "option_id": { "type": "integer", "minimum": 1 }
         }
       }
-    }
+    },
+    "reflections": {
+      "type": "array",
+      "maxItems": 5,
+      "items": { "type": "string", "maxLength": 4000 }
+    },
+    "semester": { "anyOf": [{ "type": "null" }, { "type": "integer", "minimum": 1, "maximum": 12 }] }
   }
 }

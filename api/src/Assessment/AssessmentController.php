@@ -85,10 +85,61 @@ final class AssessmentController
     public static function attempt(Request $req, array $params, App $app): Response
     {
         $user = self::user($req, $app, 'assessment.take');
-        /** @var array{answers: list<array{question_id: int, option_id: int}>} $body */
+        /** @var array{answers: list<array{question_id: int, option_id: int}>, reflections?: list<string>,
+         *     semester?: int|null} $body */
         $body = (new Validator())->validate(ProfileController::SCHEMAS . 'assessment.attempt.json', $req->json());
+        $result = self::service($app)->attempt(
+            $user,
+            (int) $params['id'],
+            $body['answers'],
+            $body['reflections'] ?? [],
+            $body['semester'] ?? null
+        );
 
-        return Response::json(self::service($app)->attempt($user, (int) $params['id'], $body['answers']), 201);
+        return Response::json($result, 201);
+    }
+
+    /** @param array<string, string> $params the taker's own completed attempt, for the print view */
+    public static function report(Request $req, array $params, App $app): Response
+    {
+        $user = self::user($req, $app, 'assessment.take');
+
+        return Response::json((new AssessmentInsights($app->pdo()))->ownReport($user, (int) $params['id']));
+    }
+
+    /** @param array<string, string> $params trait averages per faculty and semester */
+    public static function traits(Request $req, array $params, App $app): Response
+    {
+        $admin = self::user($req, $app, 'assessment.manage');
+        $insights = new AssessmentInsights($app->pdo());
+
+        return Response::json($insights->traits($admin['organisation_id'], (int) $params['id']));
+    }
+
+    /** @param array<string, string> $params */
+    public static function people(Request $req, array $params, App $app): Response
+    {
+        $admin = self::user($req, $app, 'assessment.manage');
+        $query = (new Validator())->query(ProfileController::SCHEMAS . 'assessment-people.query.json', $req->query);
+        $faculty = isset($query['faculty']) && trim((string) $query['faculty']) !== '' ? (string) $query['faculty']
+            : null;
+        $semester = isset($query['semester']) ? (int) $query['semester'] : null;
+        $insights = new AssessmentInsights($app->pdo());
+
+        return Response::json(['items' => $insights->people(
+            $admin['organisation_id'],
+            (int) $params['id'],
+            $faculty,
+            $semester
+        )]);
+    }
+
+    /** @param array<string, string> $params one person's reflections; audited */
+    public static function reflections(Request $req, array $params, App $app): Response
+    {
+        $admin = self::user($req, $app, 'assessment.manage');
+
+        return Response::json((new AssessmentInsights($app->pdo()))->readReflections($admin, (int) $params['id']));
     }
 
     /** @param array<string, string> $params */
@@ -101,12 +152,14 @@ final class AssessmentController
 
     /**
      * @return array{title: string, description: string, bands: list<array{min_percent: int, label: string}>,
-     *     questions: list<array{prompt: string, options: list<array{label: string, points: int}>}>}
+     *     questions: list<array{prompt: string, options: list<array{label: string, points: int}>}>,
+     *     answer_style?: 'choice'|'likert', reflection_prompts?: list<string>}
      */
     private static function body(Request $req): array
     {
         /** @var array{title: string, description: string, bands: list<array{min_percent: int, label: string}>,
-         *     questions: list<array{prompt: string, options: list<array{label: string, points: int}>}>} */
+         *     questions: list<array{prompt: string, options: list<array{label: string, points: int}>}>,
+         *     answer_style?: 'choice'|'likert', reflection_prompts?: list<string>} */
         return (new Validator())->validate(ProfileController::SCHEMAS . 'assessment.save.json', $req->json());
     }
 

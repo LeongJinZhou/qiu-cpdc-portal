@@ -312,3 +312,50 @@ Data (migrations 0500, 0502, 0503): new `internship` columns, `internship_change
 Decision: 2026-11-26, the ACMS industry list is taken as MSIC 2008's 21 sections (assumption: ACMS's own list was not
 available here); the list lives in PHP so CPDC can change it without a migration.
 <!-- slice A: end -->
+
+<!-- slice B (begin) -->
+## 14. Slice B (ACMS port): yearly survey, self-assessment upgrade, CV upgrades, home (2026-11-26)
+Permissions (migration 0505): home.view (everyone except pending), survey.take (students), survey.manage (admin,
+superadmin). The server enforces every rule below.
+
+Home (`/home`, the first menu page, so everyone lands there after sign-in): one call (`GET /api/home`) gives the next
+5 workshops with the person's RSVP, a to-do list (LinkedIn linked, profile filled or PDF imported, CV with a summary,
+logbook weeks not yet sent, self-assessments not taken, open yearly survey not sent; the post-internship
+satisfaction survey of slice A once it is wired), and job applications (active count, latest 3 with status). Each
+part shows only with its module's permission, so staff and alumni get the parts that fit them.
+
+Self-assessments
+1. An assessment is `choice` (own answers with points) or `likert` (every question rated 1-5, Very Poor to
+   Excellent; the server writes those five answers). It may have up to 5 reflection prompts; each needs a written
+   answer (1-2000 characters) saved with the attempt. Scoring stays on the server, unchanged.
+2. The attempt keeps the person's faculty (directory department at that time) and the semester they give (1-12).
+3. The taker opens a printable A4 report of their own attempt (name, matric, faculty, programme, semester, ratings,
+   total and band, commitments). Nobody else reaches it there.
+4. CPDC sees trait averages per faculty and semester (each person once, latest attempt), the list of takers, and one
+   person's reflections; every reading of reflections is written to the audit log.
+5. Seeded: "Student Characteristics Self-Assessment", 9 traits and 2 required reflections (from ACMS).
+
+Yearly University and Programme Survey (`/surveys`, CPDC `/surveys/manage`)
+1. All 7 ACMS sections and data points live in one definition (`Cpdc\Survey\SurveyForm`) the screen reads from the
+   API: Programme and Curriculum (10), Teaching Staff (10), Assessment (5), Skills (11 + future skills wanted),
+   Support Services and Facilities (17 units), Overall Experience (7), Future Implication and Recommendation (2);
+   a comment per section. Items are rated 1-5; only Support Services offers N/A.
+2. CPDC creates a round (draft), opens it, closes it, may reopen it; optional open and close times (Malaysia time).
+   Students answer only while it is open. One response per student per round: drafts as often as they like (saved
+   on every step change and by hand), then submit, which needs every item, the programme and the semester. A sent
+   response never changes. Faculty comes from the directory, never from the browser.
+3. CPDC sees the response rate per faculty (invited = active students of that department) and per programme
+   (invited = active students whose profile names it), section and item means without N/A (N/A counted apart),
+   comments without names (each reading audited) and a CSV of sent responses without names or emails (formula
+   cells escaped, times in Malaysia time, audited).
+
+CV builder additions: CGPA (shown only when ticked) and intake, up to 10 courses taken, awards (Dean's List,
+competitions, professional certificates; one click adds a CPDC-verified learning record, linked only if it is the
+person's own verified record), co-curricular activities, 1-2 references, and the PDPA consent to share the CV with
+QIU partner employers (`cv_document.employer_sharing_consent_at`, kept from the first tick until unticked). The
+JSON schema rejects unknown keys and long values.
+
+Data (migrations 0501, 0504, 0505): `assessment.answer_style`, `assessment.reflection_prompts`,
+`assessment_attempt.reflection_answers/faculty/semester`, `survey_cycle`, `survey_response` (unique cycle + user),
+`cv_document.employer_sharing_consent_at`. JSON columns are validated in PHP (MariaDB keeps them as text).
+<!-- slice B (end) -->

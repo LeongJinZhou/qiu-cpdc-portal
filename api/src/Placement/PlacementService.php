@@ -46,6 +46,26 @@ final class PlacementService
     }
 
     /**
+     * Whether the student still owes the post-internship satisfaction survey: null while there is nothing to ask
+     * (no internship, or it has not ended yet), true once it ended without an answer, false once answered.
+     */
+    public function satisfactionDue(int $org, int $studentId): ?bool
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT i.end_date, s.id AS answered FROM internship i'
+            . ' LEFT JOIN internship_satisfaction s ON s.internship_id = i.id'
+            . ' WHERE i.student_id = ? AND i.organisation_id = ?'
+        );
+        $stmt->execute([$studentId, $org]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($row) || $row['end_date'] === null || (string) $row['end_date'] > gmdate('Y-m-d', $this->now)) {
+            return null;
+        }
+
+        return $row['answered'] === null;
+    }
+
+    /**
      * Saves the placement form. The first save (or the first full form on an internship from the short logbook form)
      * marks it submitted; later saves need a change reason and are logged. A new supervisor email voids the
      * supervisor links not yet used, as in the logbook.

@@ -88,6 +88,10 @@ final class App
         \Cpdc\Jobs\JobsUpgradeRoutes::add($router);
         // --- slice A (end) ---
 
+        // --- slice B: home, yearly survey, self-assessment reports (begin) ---
+        \Cpdc\Survey\SliceBRoutes::add($router);
+        // --- slice B (end) ---
+
         $router
             ->add('GET', '/api/health', fn () => Response::json(['status' => 'ok']), public: true)
             ->add('GET', '/api/auth/google/start', AuthController::start(...), true, $login('google-start'))

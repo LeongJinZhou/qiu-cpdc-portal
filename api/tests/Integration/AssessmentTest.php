@@ -39,6 +39,21 @@ final class AssessmentTest extends HttpTestCase
     }
 
     /**
+     * Published assessments the signed-in person can take, without the one migration 0505 seeds.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function available(): array
+    {
+        $items = $this->body($this->send('GET', '/api/assessments'))['items'];
+
+        return array_values(array_filter(
+            $items,
+            static fn (array $a): bool => $a['title'] !== 'Student Characteristics Self-Assessment'
+        ));
+    }
+
+    /**
      * @param array<string, mixed> $assessment
      * @param list<int> $picks option index per question
      * @return list<array{question_id: int, option_id: int}>
@@ -63,7 +78,7 @@ final class AssessmentTest extends HttpTestCase
         ));
 
         $this->signInAs('student');
-        $list = $this->body($this->send('GET', '/api/assessments'))['items'];
+        $list = $this->available();
         $shown = array_map(fn ($x) => [$x['id'], $x['question_count'], $x['latest']], $list);
         $this->assertSame([[$id, 2, null]], $shown);
         $taking = $this->send('GET', "/api/assessments/$id");
@@ -83,7 +98,7 @@ final class AssessmentTest extends HttpTestCase
         $results = $this->body($this->send('GET', '/api/assessments/results'))['items'];
         $this->assertCount(1, $results, 'only the latest attempt per assessment');
         $this->assertSame(50, $results[0]['percent']);
-        $this->assertSame(50, $this->body($this->send('GET', '/api/assessments'))['items'][0]['latest']['percent']);
+        $this->assertSame(50, $this->available()[0]['latest']['percent']);
 
         $this->signInAs('admin', 'admin');
         $row = $this->body($this->send('GET', '/api/assessments/manage'))['items'][0];
@@ -131,7 +146,7 @@ final class AssessmentTest extends HttpTestCase
         $this->json('PATCH', "/api/assessments/manage/$id/status", ['status' => 'archived']);
 
         $this->signInAs('student');
-        $this->assertSame([], $this->body($this->send('GET', '/api/assessments'))['items']);
+        $this->assertSame([], $this->available());
         $this->assertError($this->send('GET', "/api/assessments/$id"), 404, 'NOT_FOUND');
         $late = ['answers' => $this->answers($a, [0, 0])];
         $this->refused('POST', "/api/assessments/$id/attempts", $late, 404, 'NOT_FOUND');
@@ -168,6 +183,6 @@ final class AssessmentTest extends HttpTestCase
         $this->assertError($this->send('GET', '/api/assessments'), 403, 'FORBIDDEN');
         $this->assertError($this->send('GET', '/api/assessments/results'), 403, 'FORBIDDEN');
         $this->signInAs('graduate', 'alumni');
-        $this->assertSame(1, count($this->body($this->send('GET', '/api/assessments'))['items']));
+        $this->assertSame(1, count($this->available()));
     }
 }

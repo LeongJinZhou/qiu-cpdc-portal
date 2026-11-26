@@ -1,5 +1,5 @@
 // CPDC: every self-assessment with its use, and the editor (questions, points per answer, result bands).
-import { Archive, ArrowLeft, ClipboardList, Eye, Lock, Plus, Trash2 } from 'lucide-react';
+import { Archive, ArrowLeft, BarChart3, ClipboardList, Eye, Lock, Plus, Trash2 } from 'lucide-react';
 import { useState, type FormEvent, type MouseEvent } from 'react';
 import { apiGet, apiWrite, useLoad } from '../api';
 import type { Me } from '../auth';
@@ -78,6 +78,8 @@ const BLANK: Managed = {
   title: '',
   description: '',
   status: 'draft',
+  answer_style: 'choice',
+  reflection_prompts: [],
   bands: [
     { min_percent: 0, label: 'Getting started' },
     { min_percent: 50, label: 'On your way' },
@@ -152,7 +154,16 @@ function Editor({ initial, me, go }: { initial: Managed; me: Me; go: (to: string
     <form className="stack" onSubmit={save} noValidate>
       <PageHead
         title={isNew ? 'New assessment' : a.title || 'Assessment'}
-        actions={!isNew && <span className={STATUS_BADGE[a.status]}>{STATUS_LABEL[a.status]}</span>}
+        actions={
+          !isNew && (
+            <>
+              <span className={STATUS_BADGE[a.status]}>{STATUS_LABEL[a.status]}</span>
+              <a className="btn btn-small" href={`/assessment-insights/${a.id}`} onClick={(e) => { e.preventDefault(); go(`/assessment-insights/${a.id}`); }}>
+                <BarChart3 size={15} aria-hidden="true" /> Results and reflections
+              </a>
+            </>
+          )
+        }
       />
       {readOnly && (
         <Notice tone="info">
@@ -169,6 +180,34 @@ function Editor({ initial, me, go }: { initial: Managed; me: Me; go: (to: string
           <label htmlFor="ab-desc">What it is for</label>
           <textarea id="ab-desc" className="textarea" rows={2} maxLength={2000} value={a.description} onChange={(e) => setA({ ...a, description: e.target.value })} />
         </div>
+        <div className="field">
+          <label htmlFor="ab-style">Answers</label>
+          <select id="ab-style" className="select" value={a.answer_style} onChange={(e) => setA({ ...a, answer_style: e.target.value === 'likert' ? 'likert' : 'choice' })}>
+            <option value="choice">Own answers with points</option>
+            <option value="likert">Rating 1-5 (Very Poor to Excellent)</option>
+          </select>
+        </div>
+      </fieldset>
+
+      <fieldset className="panel panel-pad stack as-fieldset" disabled={readOnly}>
+        <legend className="as-legend">Written reflections</legend>
+        <p className="small muted">Questions the person answers in their own words. Each one is required. CPDC can read them; every reading is logged.</p>
+        {a.reflection_prompts.map((prompt, i) => (
+          <div key={i} className="as-band as-prompt">
+            <div className="field">
+              <label htmlFor={`ab-r-${i}`}>Reflection {i + 1}</label>
+              <input id={`ab-r-${i}`} className="input" maxLength={300} value={prompt} onChange={(e) => setA({ ...a, reflection_prompts: a.reflection_prompts.map((p, j) => (j === i ? e.target.value : p)) })} />
+            </div>
+            <button type="button" className="btn btn-quiet btn-small" aria-label={`Remove reflection ${i + 1}`} onClick={() => setA({ ...a, reflection_prompts: a.reflection_prompts.filter((_, j) => j !== i) })}>
+              <Trash2 size={15} aria-hidden="true" />
+            </button>
+          </div>
+        ))}
+        {a.reflection_prompts.length < 5 && (
+          <button type="button" className="btn btn-small" onClick={() => setA({ ...a, reflection_prompts: [...a.reflection_prompts, ''] })}>
+            <Plus size={15} aria-hidden="true" /> Add reflection question
+          </button>
+        )}
       </fieldset>
 
       <fieldset className="panel panel-pad stack as-fieldset" disabled={readOnly}>
@@ -208,7 +247,8 @@ function Editor({ initial, me, go }: { initial: Managed; me: Me; go: (to: string
             <label htmlFor={`ab-q-${i}`}>Question</label>
             <input id={`ab-q-${i}`} className="input" maxLength={500} value={q.prompt} onChange={(e) => setQuestion(i, { ...q, prompt: e.target.value })} />
           </div>
-          {q.options.map((o, k) => (
+          {a.answer_style === 'likert' && <p className="small muted">Rated 1 (Very Poor) to 5 (Excellent).</p>}
+          {a.answer_style === 'choice' && q.options.map((o, k) => (
             <div key={k} className="as-band">
               <div className="field">
                 <label htmlFor={`ab-o-${i}-${k}`}>Answer {k + 1}</label>
@@ -223,7 +263,7 @@ function Editor({ initial, me, go }: { initial: Managed; me: Me; go: (to: string
               </button>
             </div>
           ))}
-          {q.options.length < 6 && (
+          {a.answer_style === 'choice' && q.options.length < 6 && (
             <button type="button" className="btn btn-small" onClick={() => setQuestion(i, { ...q, options: [...q.options, { label: '', points: 0 }] })}>
               <Plus size={15} aria-hidden="true" /> Add answer
             </button>

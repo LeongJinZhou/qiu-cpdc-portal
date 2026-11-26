@@ -15,7 +15,8 @@ use PDO;
  *
  * @phpstan-type Actor array{id: int, organisation_id: int, ...}
  * @phpstan-type Body array{title: string, description: string, bands: list<array{min_percent: int, label: string}>,
- *     questions: list<array{prompt: string, options: list<array{label: string, points: int}>}>}
+ *     questions: list<array{prompt: string, options: list<array{label: string, points: int}>}>,
+ *     answer_style?: 'choice'|'likert', reflection_prompts?: list<string>}
  */
 final class AssessmentService
 {
@@ -64,15 +65,17 @@ final class AssessmentService
     public function create(array $admin, array $body): int
     {
         $bands = Scoring::checkBands($body['bands']);
+        $style = $body['answer_style'] ?? 'choice';
+        $prompts = self::promptsJson($body);
 
-        return Transaction::run($this->pdo, function () use ($admin, $body, $bands): int {
+        return Transaction::run($this->pdo, function () use ($admin, $body, $bands, $style, $prompts): int {
             $this->pdo->prepare(
-                'INSERT INTO assessment (organisation_id, title, description, bands_json, created_by)'
-                . ' VALUES (?, ?, ?, ?, ?)'
-            )->execute([$admin['organisation_id'], trim($body['title']), trim($body['description']),
-                json_encode($bands, JSON_THROW_ON_ERROR), $admin['id']]);
+                'INSERT INTO assessment (organisation_id, title, description, answer_style, bands_json,'
+                . ' reflection_prompts, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)'
+            )->execute([$admin['organisation_id'], trim($body['title']), trim($body['description']), $style,
+                json_encode($bands, JSON_THROW_ON_ERROR), $prompts, $admin['id']]);
             $id = (int) $this->pdo->lastInsertId();
-            $this->writeQuestions($admin['organisation_id'], $id, $body['questions']);
+            $this->writeQuestions($admin['organisation_id'], $id, $body['questions'], $style);
             Audit::log($this->pdo, $admin, 'assessment.create', "assessment:$id");
 
             return $id;
@@ -88,7 +91,9 @@ final class AssessmentService
     public function replace(array $admin, int $id, array $body): void
     {
         $bands = Scoring::checkBands($body['bands']);
-        Transaction::run($this->pdo, function () use ($admin, $id, $body, $bands): void {
+        $style = $body['answer_style'] ?? 'choice';
+        $prompts = self::promptsJson($body);
+        Transaction::run($this->pdo, function () use ($admin, $id, $body, $bands, $style, $prompts): void {
             $this->assessment($admin['organisation_id'], $id, true);
             if ($this->attemptCount($id) > 0) {
                 throw new ApiError(
@@ -98,12 +103,12 @@ final class AssessmentService
                 );
             }
             $this->pdo->prepare(
-                'UPDATE assessment SET title = ?, description = ?, bands_json = ?, updated_at = UTC_TIMESTAMP(3)'
-                . ' WHERE id = ? AND organisation_id = ?'
-            )->execute([trim($body['title']), trim($body['description']), json_encode($bands, JSON_THROW_ON_ERROR),
-                $id, $admin['organisation_id']]);
+                'UPDATE assessment SET title = ?, description = ?, answer_style = ?, bands_json = ?,'
+                . ' reflection_prompts = ?, updated_at = UTC_TIMESTAMP(3) WHERE id = ? AND organisation_id = ?'
+            )->execute([trim($body['title']), trim($body['description']), $style,
+                json_encode($bands, JSON_THROW_ON_ERROR), $prompts, $id, $admin['organisation_id']]);
             $this->pdo->prepare('DELETE FROM assessment_question WHERE assessment_id = ?')->execute([$id]);
-            $this->writeQuestions($admin['organisation_id'], $id, $body['questions']);
+            $this->writeQuestions($admin['organisation_id'], $id, $body['questions'], $style);
             Audit::log($this->pdo, $admin, 'assessment.update', "assessment:$id");
         });
     }
@@ -171,17 +176,21 @@ final class AssessmentService
     }
 
     /**
-     * Scores and stores an attempt.
+     * Scores and stores an attempt with its written reflections. Faculty is the directory department, read here.
      *
      * @param Actor $user
      * @param list<array{question_id: int, option_id: int}> $answers
+     * @param list<string> $reflections one per reflection prompt, in order
+     * @param int|null $semester the person's semester, 1-12, when they gave it
      * @return array<string, mixed> the result
      */
-    public function attempt(array $user, int $id, array $answers): array
+    public function attempt(array $user, int $id, array $answers, array $reflections = [], ?int $semester = null): array
     {
         $org = $user['organisation_id'];
+        $written = [$reflections, $semester];
 
-        return Transaction::run($this->pdo, function () use ($user, $org, $id, $answers): array {
+        return Transaction::run($this->pdo, function () use ($user, $org, $id, $answers, $written): array {
+            [$reflections, $semester] = $written;
             // Locked like replace(): an edit cannot swap the questions while this attempt is scored and stored.
             $a = $this->assessment($org, $id, true);
             if ($a['status'] !== 'published') {
@@ -196,10 +205,18 @@ final class AssessmentService
             /** @var list<array{min_percent: int, label: string}> $bands */
             $bands = $a['bands'];
             $result = Scoring::score($points, $answers, $bands);
+            /** @var list<string> $prompts */
+            $prompts = $a['reflection_prompts'];
+            $written = Reflections::checkAnswers($prompts, $reflections);
+            $faculty = $this->pdo->prepare('SELECT department FROM `user` WHERE id = ? AND organisation_id = ?');
+            $faculty->execute([$user['id'], $org]);
+            $department = $faculty->fetchColumn();
             $this->pdo->prepare(
-                'INSERT INTO assessment_attempt (organisation_id, assessment_id, user_id, score, max_score, band_label)'
-                . ' VALUES (?, ?, ?, ?, ?, ?)'
-            )->execute([$org, $id, $user['id'], $result['score'], $result['max_score'], $result['band']]);
+                'INSERT INTO assessment_attempt (organisation_id, assessment_id, user_id, score, max_score, band_label,'
+                . ' reflection_answers, faculty, semester) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            )->execute([$org, $id, $user['id'], $result['score'], $result['max_score'], $result['band'],
+                $written === null ? null : json_encode($written, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
+                is_string($department) && $department !== '' ? $department : null, $semester]);
             $attemptId = (int) $this->pdo->lastInsertId();
             $insert = $this->pdo->prepare(
                 'INSERT INTO assessment_answer (attempt_id, question_id, option_id) VALUES (?, ?, ?)'
@@ -208,17 +225,18 @@ final class AssessmentService
                 $insert->execute([$attemptId, $q, $o]);
             }
 
-            return ['assessment_id' => $id, 'title' => $a['title'], 'score' => $result['score'],
+            return ['attempt_id' => $attemptId, 'assessment_id' => $id, 'title' => $a['title'],
+                'score' => $result['score'],
                 'max_score' => $result['max_score'], 'percent' => $result['percent'], 'band' => $result['band']];
         });
     }
 
-    /** @return list<array{assessment_id: int, title: string, score: int, max_score: int, percent: int,
-     *     band: string|null, taken_at: string}> the latest result of each assessment the person took */
+    /** @return list<array{attempt_id: int, assessment_id: int, title: string, score: int, max_score: int,
+     *     percent: int, band: string|null, taken_at: string}> the latest result of each assessment the person took */
     public function myResults(int $org, int $userId): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT t.assessment_id, a.title, t.score, t.max_score, t.band_label, t.created_at'
+            'SELECT t.id, t.assessment_id, a.title, t.score, t.max_score, t.band_label, t.created_at'
             . ' FROM assessment_attempt t JOIN assessment a ON a.id = t.assessment_id'
             . " WHERE t.user_id = ? AND t.organisation_id = ? AND a.status <> 'draft' AND t.id = ("
             . 'SELECT MAX(t2.id) FROM assessment_attempt t2 WHERE t2.user_id = t.user_id'
@@ -230,7 +248,8 @@ final class AssessmentService
             $score = (int) $r['score'];
             $max = (int) $r['max_score'];
 
-            return ['assessment_id' => (int) $r['assessment_id'], 'title' => (string) $r['title'], 'score' => $score,
+            return ['attempt_id' => (int) $r['id'], 'assessment_id' => (int) $r['assessment_id'],
+                'title' => (string) $r['title'], 'score' => $score,
                 'max_score' => $max, 'percent' => $max === 0 ? 0 : intdiv($score * 100, $max),
                 'band' => $r['band_label'] === null ? null : (string) $r['band_label'],
                 'taken_at' => (string) $r['created_at']];
@@ -241,8 +260,8 @@ final class AssessmentService
     private function assessment(int $org, int $id, bool $lock = false): array
     {
         $stmt = $this->pdo->prepare(
-            'SELECT id, title, description, bands_json, status, updated_at FROM assessment'
-            . ' WHERE id = ? AND organisation_id = ?' . ($lock ? ' FOR UPDATE' : '')
+            'SELECT id, title, description, answer_style, bands_json, reflection_prompts, status, updated_at'
+            . ' FROM assessment WHERE id = ? AND organisation_id = ?' . ($lock ? ' FOR UPDATE' : '')
         );
         $stmt->execute([$id, $org]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -251,6 +270,7 @@ final class AssessmentService
         }
         $row['id'] = (int) $row['id'];
         $row['bands'] = json_decode((string) $row['bands_json'], true, 8, JSON_THROW_ON_ERROR);
+        $row['reflection_prompts'] = Reflections::decodeList($row['reflection_prompts']);
         unset($row['bands_json']);
 
         return $row;
@@ -280,8 +300,12 @@ final class AssessmentService
         return array_values($out);
     }
 
-    /** @param list<array{prompt: string, options: list<array{label: string, points: int}>}> $questions */
-    private function writeQuestions(int $org, int $assessmentId, array $questions): void
+    /**
+     * A likert assessment ignores the options sent and gives every question the five standard ratings.
+     *
+     * @param list<array{prompt: string, options: list<array{label: string, points: int}>}> $questions
+     */
+    private function writeQuestions(int $org, int $assessmentId, array $questions, string $style): void
     {
         $q = $this->pdo->prepare(
             'INSERT INTO assessment_question (organisation_id, assessment_id, position, prompt) VALUES (?, ?, ?, ?)'
@@ -292,10 +316,18 @@ final class AssessmentService
         foreach ($questions as $i => $question) {
             $q->execute([$org, $assessmentId, $i, trim($question['prompt'])]);
             $questionId = (int) $this->pdo->lastInsertId();
-            foreach ($question['options'] as $j => $option) {
+            foreach ($style === 'likert' ? Reflections::LIKERT : $question['options'] as $j => $option) {
                 $o->execute([$questionId, $j, trim($option['label']), $option['points']]);
             }
         }
+    }
+
+    /** @param Body $body */
+    private static function promptsJson(array $body): ?string
+    {
+        $prompts = Reflections::checkPrompts($body['reflection_prompts'] ?? []);
+
+        return $prompts === [] ? null : json_encode($prompts, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
     }
 
     private function attemptCount(int $assessmentId): int

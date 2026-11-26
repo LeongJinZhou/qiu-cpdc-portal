@@ -14,7 +14,7 @@ const COURSE = `Fake SQL Basics ${run}`;
 async function signIn(page: Page, provider: 'google' | 'linkedin', persona: string, mode = '') {
   await page.goto(`/api/auth/${provider}/start${mode}`);
   await page.getByRole('link', { name: new RegExp(`\\(${persona}\\)$`) }).click();
-  await expect(page).toHaveURL(/\/profile$/);
+  await expect(page).toHaveURL(/\/home$/); // the first menu page since slice B
 }
 
 async function signOut(page: Page) {

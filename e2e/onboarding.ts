@@ -3,10 +3,10 @@ import { expect, type Page } from '@playwright/test';
 /**
  * After a Google sign-in: finishes onboarding (link LinkedIn persona, follow tick, profile link, consent) when the
  * portal asks for it, and lands on /profile. Specs share one seeded database, so a persona may already be onboarded
- * by an earlier spec; then the portal opens the profile straight away.
+ * by an earlier spec; then the portal opens the person's first page (/home since slice B) straight away.
  */
 export async function onboardIfAsked(page: Page, linkedinPersona: string, profileUrl: string) {
-  await page.waitForURL(/\/(onboarding|profile)$/);
+  await page.waitForURL(/\/(onboarding|profile|home)$/);
   if (page.url().endsWith('/onboarding')) {
     await page.getByRole('link', { name: 'Sign in with LinkedIn' }).click();
     await page.getByRole('link', { name: new RegExp(`\\(${linkedinPersona}\\)$`) }).click();
@@ -18,5 +18,5 @@ export async function onboardIfAsked(page: Page, linkedinPersona: string, profil
     await page.getByLabel('I agree that CPDC keeps and uses my career profile as described.').check();
     await page.getByRole('button', { name: 'Finish and open my profile' }).click();
   }
-  await expect(page).toHaveURL(/\/profile$/);
+  await expect(page).toHaveURL(/\/(profile|home)$/);
 }
