@@ -11,6 +11,7 @@ use Cpdc\Http\Request;
 use Cpdc\Http\Response;
 use Cpdc\Http\Router;
 use Cpdc\Http\Validator;
+use Cpdc\Logbook\Weeks;
 use Cpdc\Profile\ProfileController;
 use Cpdc\Workshops\WorkshopTime;
 
@@ -53,7 +54,7 @@ final class AnalyticsController
         $time = static fn (mixed $utc): string => WorkshopTime::readable(is_string($utc) ? $utc : null, $zone);
         $yes = static fn (mixed $v): string => $v === null || (int) $v === 0 ? 'No' : 'Yes';
         $reports = new AnalyticsReports($app->pdo(), $app->now(), self::confirmDays($app, $org));
-        $date = gmdate('Y-m-d', $app->now());
+        $date = Weeks::today($app->now(), $zone); // the Malaysia date in the file name
         if (($req->query['report'] ?? '') === 'outcomes') {
             $rows = $reports->outcomes($filters);
             Audit::log($app->pdo(), $admin, 'analytics.export', 'alumni_outcomes', ['rows' => count($rows),
