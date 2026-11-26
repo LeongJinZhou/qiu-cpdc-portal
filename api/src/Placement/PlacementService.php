@@ -48,8 +48,10 @@ final class PlacementService
     /**
      * Whether the student still owes the post-internship satisfaction survey: null while there is nothing to ask
      * (no internship, or it has not ended yet), true once it ended without an answer, false once answered.
+     *
+     * @param string $today the Malaysia date (Weeks::today)
      */
-    public function satisfactionDue(int $org, int $studentId): ?bool
+    public function satisfactionDue(int $org, int $studentId, string $today): ?bool
     {
         $stmt = $this->pdo->prepare(
             'SELECT i.end_date, s.id AS answered FROM internship i'
@@ -58,7 +60,7 @@ final class PlacementService
         );
         $stmt->execute([$studentId, $org]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!is_array($row) || $row['end_date'] === null || (string) $row['end_date'] > gmdate('Y-m-d', $this->now)) {
+        if (!is_array($row) || (string) $row['end_date'] > $today) {
             return null;
         }
 

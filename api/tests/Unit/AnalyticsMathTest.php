@@ -53,13 +53,12 @@ final class AnalyticsMathTest extends TestCase
         $this->assertSame(450.0, AnalyticsService::median([900.0, 0.0]));
     }
 
-    public function testLogbookWeeksDueRunFromTheStartToTheEndOrToday(): void
+    public function testAnEndDateBeforeTheStartIsRefused(): void
     {
-        // 1_800_000_000 is Friday 15 January 2027.
-        $now = 1_800_000_000;
-        $this->assertSame(0, AnalyticsService::weeksDue('2027-02-01', '2027-04-30', $now), 'not started yet');
-        $this->assertSame(1, AnalyticsService::weeksDue('2027-01-15', null, $now), 'starts today');
-        $this->assertSame(2, AnalyticsService::weeksDue('2027-01-04', '2027-03-26', $now), 'two weeks so far');
-        $this->assertSame(12, AnalyticsService::weeksDue('2026-07-06', '2026-09-25', $now), 'ended: its full length');
+        $same = AnalyticsFilters::fromQuery(1, ['from' => '2027-01-31', 'to' => '2027-01-31'], 'Asia/Kuala_Lumpur');
+        $this->assertSame('2027-01-30 16:00:00', $same->fromUtc, 'one whole Malaysia day');
+        $this->assertSame('2027-01-31 16:00:00', $same->toUtc);
+        $this->expectException(ApiError::class);
+        AnalyticsFilters::fromQuery(1, ['from' => '2027-02-01', 'to' => '2027-01-31'], 'Asia/Kuala_Lumpur');
     }
 }

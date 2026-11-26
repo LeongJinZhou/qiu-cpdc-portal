@@ -318,7 +318,7 @@ final class PlacementTest extends HttpTestCase
             "SELECT action, meta_json FROM audit_log WHERE action LIKE 'placement.export%' ORDER BY id"
         )->fetchAll(\PDO::FETCH_ASSOC);
         $this->assertSame(['placement.export_visits', 'placement.export_satisfaction'], array_column($audit, 'action'));
-        $this->assertSame(['rows' => 2], json_decode((string) $audit[0]['meta_json'], true));
-        $this->assertSame(['rows' => 1], json_decode((string) $audit[1]['meta_json'], true));
+        $this->assertSame(['rows' => 2, 'filters' => []], json_decode((string) $audit[0]['meta_json'], true));
+        $this->assertSame(['rows' => 1, 'filters' => $fake], json_decode((string) $audit[1]['meta_json'], true));
     }
 }

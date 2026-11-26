@@ -33,6 +33,9 @@ final class AnalyticsFilters
             ? trim((string) $query[$key])
             : null;
         $role = $query['role'] ?? 'all';
+        if ($text('from') !== null && $text('to') !== null && $text('from') > $text('to')) {
+            throw \Cpdc\Http\ApiError::validation('to', 'The end date is before the start date.');
+        }
 
         return new self(
             $org,

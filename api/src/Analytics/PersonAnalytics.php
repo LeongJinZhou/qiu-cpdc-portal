@@ -28,7 +28,7 @@ final class PersonAnalytics
             . ' (l.user_id IS NOT NULL) AS linkedin, c.updated_at AS cv_updated_at, c.employer_sharing_consent_at'
             . ' FROM `user` u LEFT JOIN career_profile p ON p.user_id = u.id'
             . ' LEFT JOIN linkedin_account l ON l.user_id = u.id LEFT JOIN cv_document c ON c.user_id = u.id'
-            . ' WHERE u.id = ? AND u.organisation_id = ?',
+            . " WHERE u.id = ? AND u.organisation_id = ? AND u.role IN ('student', 'alumni')",
             [$userId, $org]
         ) ?? throw new ApiError(404, 'NOT_FOUND', 'Not found.');
         $skills = $this->skills($userId);
@@ -203,7 +203,8 @@ final class PersonAnalytics
             [$userId]
         );
         $counts = $this->row(
-            "SELECT SUM(status = 'going') AS going, SUM(checked_in_at IS NOT NULL) AS attended FROM workshop_rsvp"
+            "SELECT SUM(status = 'going') AS going, SUM(status = 'going' AND checked_in_at IS NOT NULL) AS attended"
+            . ' FROM workshop_rsvp'
             . ' WHERE user_id = ?',
             [$userId]
         ) ?? [];

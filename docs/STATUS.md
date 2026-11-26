@@ -34,6 +34,10 @@
   MSIC 2008's 21 sections, an assumption until CPDC sends the ACMS list. Survey support units are named as in ACMS
   (SARD, SRD, SLD, FAD, ISO): CPDC may want full names on screen.
 - Analytics reads every row on each load: fine for one university; add caching only if it gets slow.
+- Low, from the release review: yearly survey comments and CSV show faculty, programme and semester beside free
+  text, so a small programme can point to one student (hide them under 5 answers, or tell students the survey is
+  not anonymous); two first placement saves at the same moment give a 500 instead of a clear answer; a student may
+  answer the satisfaction survey before the internship ends (the home to-do only asks after).
 
 ## Next step
 Founder checks the ACMS features live (as a student and as CPDC), then the "production" sweep before real students.

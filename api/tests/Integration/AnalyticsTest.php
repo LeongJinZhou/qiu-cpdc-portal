@@ -126,6 +126,18 @@ final class AnalyticsTest extends HttpTestCase
             'alumni' => $cohort['kpis']['alumni']]);
         $later = $this->body($this->send('GET', '/api/analytics/overview', '', ['from' => '2027-02-01']));
         $this->assertSame(0, $later['internship']['placed'], 'the internship started before the range');
+        $lastDay = $this->body($this->send('GET', '/api/analytics/overview', '', ['from' => '2026-12-01',
+            'to' => '2027-01-04', 'faculty' => 'Faculty of Fake Studies']));
+        $this->assertSame(1, $lastDay['internship']['placed'], 'the start date is the last day of the range');
+        $this->assertError($this->send('GET', '/api/analytics/overview', '', ['from' => '2027-02-01',
+            'to' => '2027-01-01']), 400, 'VALIDATION');
+    }
+
+    public function testTheViewIsOnlyForStudentsAndAlumni(): void
+    {
+        $staff = $this->signInAs('staff');
+        $this->signInAs('admin', 'admin');
+        $this->assertError($this->send('GET', "/api/people/$staff/analytics"), 404, 'NOT_FOUND');
     }
 
     public function testBothReportsAreFormulaSafeMalaysiaTimeAndAudited(): void

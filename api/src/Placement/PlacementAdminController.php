@@ -67,8 +67,10 @@ final class PlacementAdminController
     {
         $admin = self::admin($req, $app);
         $org = $admin['organisation_id'];
-        $rows = (new PlacementReport($app->pdo()))->visitRows($org, self::query($req));
-        Audit::log($app->pdo(), $admin, 'placement.export_visits', 'placements', ['rows' => count($rows)]);
+        $query = self::query($req);
+        $rows = (new PlacementReport($app->pdo()))->visitRows($org, $query);
+        Audit::log($app->pdo(), $admin, 'placement.export_visits', 'placements', ['rows' => count($rows),
+            'filters' => $query]);
         $zone = $app->settings($org)->string('display_timezone');
         $header = ['Student', 'Matric no', 'Faculty', 'Company', 'Nature of business', 'Address line 1',
             'Address line 2', 'Address line 3', 'Postcode', 'State', 'Country', 'Start date', 'End date', 'Batch',
@@ -99,8 +101,10 @@ final class PlacementAdminController
     {
         $admin = self::admin($req, $app);
         $org = $admin['organisation_id'];
-        $rows = (new PlacementReport($app->pdo()))->surveyRows($org, self::query($req));
-        Audit::log($app->pdo(), $admin, 'placement.export_satisfaction', 'placements', ['rows' => count($rows)]);
+        $query = self::query($req);
+        $rows = (new PlacementReport($app->pdo()))->surveyRows($org, $query);
+        Audit::log($app->pdo(), $admin, 'placement.export_satisfaction', 'placements', ['rows' => count($rows),
+            'filters' => $query]);
         $zone = $app->settings($org)->string('display_timezone');
         $header = ['Student', 'Matric no', 'Faculty', 'Company', 'Nature of business', 'Batch',
             'Would recommend to QIU juniors', 'Overall rating (1-5)', 'Rating', 'Offered a job', 'Feedback',

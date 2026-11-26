@@ -56,7 +56,8 @@ final class AnalyticsController
         $date = gmdate('Y-m-d', $app->now());
         if (($req->query['report'] ?? '') === 'outcomes') {
             $rows = $reports->outcomes($filters);
-            Audit::log($app->pdo(), $admin, 'analytics.export', 'alumni_outcomes', ['rows' => count($rows)]);
+            Audit::log($app->pdo(), $admin, 'analytics.export', 'alumni_outcomes', ['rows' => count($rows),
+                'filters' => $req->query]);
 
             return Csv::response("alumni-outcomes-$date.csv", ['Name', 'Matric no', 'Faculty', 'Programme',
                 'Graduation year', 'Status', 'Job title', 'Company', 'Job confirmed (Malaysia time)', 'Confirmation',
@@ -70,7 +71,9 @@ final class AnalyticsController
                 ));
         }
         $rows = $reports->readiness($filters);
-        Audit::log($app->pdo(), $admin, 'analytics.export', 'student_readiness', ['rows' => count($rows)]);
+        // The query passed analytics.query.json in filters() above: known keys only.
+        Audit::log($app->pdo(), $admin, 'analytics.export', 'student_readiness', ['rows' => count($rows),
+            'filters' => $req->query]);
 
         return Csv::response("student-readiness-$date.csv", ['Name', 'Matric no', 'Faculty', 'Programme',
             'Onboarded', 'LinkedIn', 'LinkedIn PDF imported', 'CV updated (Malaysia time)', 'Shares CV with employers',
@@ -101,7 +104,12 @@ final class AnalyticsController
 
     private static function service(App $app, int $org): AnalyticsService
     {
-        return new AnalyticsService($app->pdo(), $app->now(), self::confirmDays($app, $org));
+        return new AnalyticsService(
+            $app->pdo(),
+            $app->now(),
+            self::confirmDays($app, $org),
+            $app->settings($org)->string('display_timezone')
+        );
     }
 
     private static function confirmDays(App $app, int $org): int

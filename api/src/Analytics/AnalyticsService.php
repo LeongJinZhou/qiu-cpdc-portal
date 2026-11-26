@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cpdc\Analytics;
 
 use Cpdc\Alumni\AlumniService;
+use Cpdc\Logbook\Weeks;
 use Cpdc\Survey\SurveyForm;
 use PDO;
 
@@ -23,9 +24,19 @@ final class AnalyticsService
     private const JOB_EMPLOYER = ' FROM job_application a JOIN job_posting j ON j.id = a.job_id'
         . ' JOIN employer e ON e.id = j.employer_id';
 
-    /** @param int $now unix time (the App clock) */
-    public function __construct(private readonly PDO $pdo, private readonly int $now, private readonly int $confirmDays)
-    {
+    private readonly string $today;
+
+    /**
+     * @param int $now unix time (the App clock)
+     * @param string $zone display_timezone: "today" is the Malaysia date
+     */
+    public function __construct(
+        private readonly PDO $pdo,
+        private readonly int $now,
+        private readonly int $confirmDays,
+        string $zone
+    ) {
+        $this->today = Weeks::today($now, $zone);
     }
 
     /** @return array<string, mixed> */
@@ -120,8 +131,8 @@ final class AnalyticsService
         $expected = 0;
         $approvedInTime = 0;
         foreach ($rows as $r) {
-            $end = $r['end_date'] === null ? null : (string) $r['end_date'];
-            $due = self::weeksDue((string) $r['start_date'], $end, $this->now);
+            // The logbook's own rule (weeks named by their Monday, Malaysia date), so this matches /home and /logbook.
+            $due = Weeks::expected((string) $r['start_date'], (string) $r['end_date'], $this->today);
             $expected += $due;
             $approvedInTime += min($due, (int) ($byInternship[$r['id']]['approved'] ?? 0));
         }
@@ -174,7 +185,7 @@ final class AnalyticsService
             'open_jobs' => $this->count(
                 "SELECT COUNT(*) FROM job_posting WHERE organisation_id = ? AND status = 'open'"
                 . ' AND (closing_date IS NULL OR closing_date >= ?)',
-                [$f->org, gmdate('Y-m-d', $this->now)]
+                [$f->org, $this->today]
             ),
             'applications' => array_sum(array_column($funnel, 'count')),
             'funnel' => $funnel,
@@ -221,7 +232,8 @@ final class AnalyticsService
         );
         [$shopRange, $wArgs] = $f->period('w.starts_at');
         $workshops = $this->row(
-            "SELECT SUM(r.status = 'going') AS going, SUM(r.checked_in_at IS NOT NULL) AS attended FROM workshop_rsvp r"
+            "SELECT SUM(r.status = 'going') AS going,"
+            . " SUM(r.status = 'going' AND r.checked_in_at IS NOT NULL) AS attended FROM workshop_rsvp r"
             . " JOIN workshop w ON w.id = r.workshop_id WHERE r.user_id IN ($people)$shopRange"
             . " AND w.status = 'published' AND w.starts_at < ?",
             [...$args, ...$wArgs, gmdate('Y-m-d H:i:s', $this->now)]
@@ -434,20 +446,6 @@ final class AnalyticsService
         ];
     }
 
-    /**
-     * Logbook weeks an internship should have by now: from its start to its end or today, whichever is first.
-     */
-    public static function weeksDue(string $start, ?string $end, int $now): int
-    {
-        $today = gmdate('Y-m-d', $now);
-        $last = $end === null || $end > $today ? $today : $end;
-        if ($start > $last) {
-            return 0;
-        }
-        $days = (int) ((strtotime($last . ' UTC') - strtotime($start . ' UTC')) / 86400);
-
-        return intdiv($days, 7) + 1;
-    }
 
     /** @param list<float> $values */
     public static function median(array $values): ?float
