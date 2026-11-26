@@ -3,12 +3,16 @@
 ## Open
 - Live on Render since 2026-11-26: https://qiu-cpdc-portal.onrender.com, Blueprint `qiu-cpdc` from repo
   qiu-cpdc-portal, branch `main` (every push deploys). Checked: health ok on the Aiven database, pages, headers,
-  Google and LinkedIn redirects. Not yet checked: a real Google and LinkedIn sign-in (founder), then each module.
+  Google and LinkedIn redirects; the founder signed in and onboarded. Fixed live: Aiven's default SQL mode (ANSI)
+  broke profile and workshop queries, so every connection now sets one SQL mode (CI runs MySQL in Aiven's mode);
+  sessions moved to the database (table php_session), so a restart or sleep no longer signs people out; a save with
+  an old CSRF token fetches the current one and retries once. Saved browser test e2e/every-page.spec.ts opens every
+  menu page as superadmin, student and alumna. Not yet checked live: each module after these fixes (founder).
 - The old Render service `qiu-cpdc-career-portal` (Next.js) is no longer used; its repo's master now holds this
   portal, the Next.js code is on branch `legacy-nextjs`. Removing that service is the founder's call.
 - Security: an Aiven database password was pasted in chat on 2026-11-26. Reset it in Aiven and in Render.
-- Founder: create the MySQL database for Render (Aiven free plan or similar), fill the Render values, register the
-  callback URLs at Google and LinkedIn (docs/RELEASE.md). Exabytes upload when ready.
+- Exabytes upload when ready (docs/RELEASE.md section 4).
+- Frontend unit tests (vitest, e.g. web/src/api.test.ts) do not run in CI yet.
 - Founder, when wanted: `ANTHROPIC_API_KEY` in Render for interview feedback (paid; `AI_MODEL` claude-sonnet-5-5 in
   render.yaml). Without it the interview screen says "not set up yet".
 - Email: Render has no sendmail, so `MAIL_DRIVER=log` there (supervisor links are only logged, not emailed). Exabytes
