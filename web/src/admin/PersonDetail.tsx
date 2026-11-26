@@ -1,8 +1,10 @@
-// One person's full profile for CPDC (read-only), plus role change and "make alumni". Viewing is audited.
+// One person's full profile for CPDC (read-only), plus role change and "make alumni", and for students and alumni the
+// 360 analytics view (slice C). Viewing is audited.
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { apiGet, apiPatch, apiWrite, useLoad } from '../api';
-import { ROLE_LABEL, type Me, type Role } from '../auth';
+import { Person360 } from '../analytics/Person360';
+import { ROLE_LABEL, can, type Me, type Role } from '../auth';
 import { STATUS_LABEL, dateLabel, monthLabel, type Profile } from '../profile/types';
 import '../profile/profile.css';
 import { Avatar, LoadError, Notice, SkeletonLines, Spinner, errorText } from '../ui/parts';
@@ -106,6 +108,7 @@ export function PersonDetail({ me, id, go }: { me: Me; id: number; go: (to: stri
               )}
             </div>
           </div>
+          {can(me, 'analytics.view') && (p.role === 'student' || p.role === 'alumni') && <Person360 id={p.id} />}
         </>
       )}
     </>

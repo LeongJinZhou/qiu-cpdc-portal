@@ -49,5 +49,5 @@ test('student onboarding, LinkedIn PDF import and the alumni tracker', async ({ 
 
   await page.getByRole('link', { name: 'Alumni tracker' }).click();
   const row = page.getByRole('row', { name: /Fake Student/ });
-  await expect(row.getByRole('link', { name: /Fake Student/ })).toHaveAttribute('href', 'https://www.linkedin.com/in/fake-student');
+  await expect(row.getByRole('link', { name: /^Fake Student \(LinkedIn/ })).toHaveAttribute('href', 'https://www.linkedin.com/in/fake-student');
 });

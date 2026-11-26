@@ -1,0 +1,173 @@
+/* CPDC analytics and the 360 view. Tokens from app.css only; bars reuse .rate-bar from admin.css. */
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.kpi {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  min-width: 0;
+}
+
+.kpi-label {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.kpi-value {
+  font-family: var(--font-heading);
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.an-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 20px;
+}
+
+.an-wide {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 900px) {
+  .an-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.an-grid > .panel,
+.an-section {
+  min-width: 0;
+}
+
+.an-section h2 {
+  margin-bottom: 12px;
+}
+
+.an-section h3 {
+  font-size: 0.95rem;
+  margin: 18px 0 8px;
+}
+
+.an-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px 16px;
+  margin: 0 0 4px;
+}
+
+.an-facts div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.an-facts dt {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.an-facts dd {
+  margin: 0;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+
+.bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.bars li {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(60px, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.bars-label {
+  overflow-wrap: anywhere;
+}
+
+.bars-value {
+  min-width: 3ch;
+  text-align: right;
+}
+
+@media (max-width: 480px) {
+  .bars li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .bars li .rate-bar {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+.an-section .rate {
+  min-width: 110px;
+}
+
+.an-section td:first-child {
+  min-width: 150px;
+}
+
+.an-downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px 16px;
+}
+
+.checklist li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.92rem;
+}
+
+.checklist .done {
+  color: var(--ok);
+}
+
+.checklist .todo {
+  color: var(--faint);
+}
+
+.reflection {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-radius: var(--radius-control);
+}
+
+.reflection p {
+  margin: 4px 0 0;
+  white-space: pre-line;
+}

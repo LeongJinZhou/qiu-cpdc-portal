@@ -7,7 +7,7 @@ namespace Cpdc\Tests\Integration;
 use Cpdc\Http\Response;
 use Cpdc\Survey\SurveyForm;
 
-/** The yearly University and Programme Survey (docs/SPEC.md section 13): drafts, submit, N/A, CPDC results. */
+/** The yearly University and Programme Survey (docs/SPEC.md section 14): drafts, submit, N/A, CPDC results. */
 final class SurveyTest extends HttpTestCase
 {
     use SignsInAs;

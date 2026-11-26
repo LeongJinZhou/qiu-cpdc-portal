@@ -22,7 +22,7 @@ test('workshop RSVP and check-in, CV builder and career path', async ({ page }) 
   const programme = `Bachelor of Fake E2E ${stamp}`;
 
   await signIn(page, 'google', 'superadmin');
-  await page.getByRole('link', { name: 'Workshops' }).click();
+  await page.getByRole('link', { name: 'Workshops', exact: true }).click();
   await page.getByRole('button', { name: 'New workshop' }).click();
   await page.getByLabel('Title').fill(title);
   await page.getByLabel('Starts (Malaysia time)').fill(tomorrowAt('10:00'));
@@ -48,7 +48,7 @@ test('workshop RSVP and check-in, CV builder and career path', async ({ page }) 
   await signIn(page, 'google', 'student-b');
   await onboardIfAsked(page, 'staff', 'linkedin.com/in/fake-other-student');
 
-  await page.getByRole('link', { name: 'Workshops' }).click();
+  await page.getByRole('link', { name: 'Workshops', exact: true }).click();
   const card = page.getByRole('article', { name: title });
   await card.getByRole('button', { name: 'RSVP' }).click();
   await expect(card.getByText('You have a seat. See you there.')).toBeVisible();
@@ -79,7 +79,7 @@ test('workshop RSVP and check-in, CV builder and career path', async ({ page }) 
 
   // CPDC at the door.
   await signIn(page, 'google', 'superadmin');
-  await page.getByRole('link', { name: 'Workshops' }).click();
+  await page.getByRole('link', { name: 'Workshops', exact: true }).click();
   await page.getByRole('article', { name: title }).getByRole('button', { name: 'Check-in list' }).click();
   await expect(page.getByText('Check-in code')).toBeVisible();
   await page.getByRole('checkbox', { name: 'Fake Other Student is here' }).check();

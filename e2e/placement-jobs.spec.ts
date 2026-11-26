@@ -15,7 +15,7 @@ const VIEWPORTS = [
 async function signIn(page: Page, persona: string) {
   await page.goto('/api/auth/google/start');
   await page.getByRole('link', { name: new RegExp(`\\(${persona}\\)$`) }).click();
-  await expect(page).toHaveURL(/\/profile$/);
+  await expect(page).toHaveURL(/\/home$/); // the landing page since slice B
 }
 
 async function signOut(page: Page) {

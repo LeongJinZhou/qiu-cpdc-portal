@@ -11,7 +11,7 @@ use Cpdc\Workshops\WorkshopTime;
 use PDO;
 
 /**
- * The yearly University and Programme Survey (docs/SPEC.md section 13). Students answer open rounds, saving drafts
+ * The yearly University and Programme Survey (docs/SPEC.md section 14). Students answer open rounds, saving drafts
  * as they go; a submitted response is final. CPDC opens and closes rounds and reads the results. Every query is
  * scoped to the organisation, and a student only ever reaches their own response.
  *

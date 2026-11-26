@@ -91,6 +91,7 @@ final class App
         // --- slice B: home, yearly survey, self-assessment reports (begin) ---
         \Cpdc\Survey\SliceBRoutes::add($router);
         // --- slice B (end) ---
+        \Cpdc\Analytics\AnalyticsController::routes($router); // slice C: analytics and the 360 view
 
         $router
             ->add('GET', '/api/health', fn () => Response::json(['status' => 'ok']), public: true)

@@ -7,6 +7,7 @@ import { CalendarDays, FileText, Route } from 'lucide-react';
 // slice 3b icons
 import { HandHelping, ListChecks, MessagesSquare, Network } from 'lucide-react';
 import { ChartColumn, House, MessageSquareHeart } from 'lucide-react'; // slice B
+import { ChartPie } from 'lucide-react'; // slice C
 import { can, ROLE_LABEL, type Me } from '../auth';
 import { Avatar } from '../ui/parts';
 import { NAV_2A } from '../logbook/nav2a'; // slice 2a
@@ -48,6 +49,7 @@ export const NAV: NavItem[] = [
   { path: '/surveys', label: 'Yearly survey', icon: MessageSquareHeart, permission: 'survey.take' },
   { path: '/surveys/manage', label: 'Survey results', icon: ChartColumn, permission: 'survey.manage' },
   // --- slice B (end) ---
+  { path: '/analytics', label: 'Analytics', icon: ChartPie, permission: 'analytics.view' }, // slice C
 ];
 
 /** Menu sections. NAV keeps its order (the first allowed item is the person's home); this only groups it. */
@@ -60,7 +62,7 @@ const GROUPS: { label: string; paths: string[] }[] = [
   { label: 'Opportunities', paths: ['/jobs', '/workshops', '/network', '/interview'] },
   {
     label: 'CPDC',
-    paths: ['/alumni', '/people', '/registrations', '/internships', '/showcase', '/employers', '/learning-checks',
+    paths: ['/analytics', '/alumni', '/people', '/registrations', '/internships', '/showcase', '/employers', '/learning-checks',
       '/assessment-builder', '/surveys/manage', '/mentoring', '/questions', '/audit'],
   },
 ];

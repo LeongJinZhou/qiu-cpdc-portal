@@ -40,7 +40,7 @@ interface StatRow {
 type Filters = { q: string; faculty: string; year: string; status: string; linkedin: string };
 const NO_FILTERS: Filters = { q: '', faculty: '', year: '', status: '', linkedin: '' };
 
-export function AlumniTracker({ me }: { me: Me }) {
+export function AlumniTracker({ me, go }: { me: Me; go: (to: string) => void }) {
   const [draft, setDraft] = useState<Filters>(NO_FILTERS);
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
   const [page, setPage] = useState(1);
@@ -127,6 +127,7 @@ export function AlumniTracker({ me }: { me: Me }) {
                   <th>Faculty · Year</th>
                   <th>Now</th>
                   <th>Confirmed</th>
+                  <th><span className="visually-hidden">Open</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -147,6 +148,11 @@ export function AlumniTracker({ me }: { me: Me }) {
                       )}
                     </td>
                     <td className="small muted num">{dateLabel(a.job_confirmed_at)}</td>
+                    <td>
+                      <a className="btn btn-small" href={`/people/${a.id}`} onClick={(e) => { e.preventDefault(); go(`/people/${a.id}`); }}>
+                        View<span className="visually-hidden"> {a.display_name}</span>
+                      </a>
+                    </td>
                   </tr>
                 ))}
               </tbody>

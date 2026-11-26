@@ -40,6 +40,7 @@ import { HomePage } from './home/HomePage';
 import { SurveyManage } from './survey/SurveyManage';
 import { SurveyPage } from './survey/SurveyPage';
 // --- slice B (end) ---
+import { AnalyticsPage } from './analytics/AnalyticsPage'; // slice C
 
 type State = { kind: 'loading' } | { kind: 'error'; error: unknown } | { kind: 'out' } | { kind: 'in'; me: Me };
 
@@ -73,6 +74,7 @@ const TITLES: Record<string, string> = {
   '/assessment-report': 'Self-assessment report',
   '/assessment-insights': 'Assessment results',
   // --- slice B (end) ---
+  '/analytics': 'Analytics', // slice C
 };
 
 export function App() {
@@ -175,7 +177,7 @@ export function App() {
       {(page ?? home) === '/profile' && (
         <ProfilePage me={me} linkResult={flags.linkedin} githubResult={flags.github} onMeChanged={() => void refresh()} />
       )}
-      {page === '/alumni' && <AlumniTracker me={me} />}
+      {page === '/alumni' && <AlumniTracker me={me} go={go} />}
       {page === '/people' && <People go={go} />}
       {page === '/people/:id' && personId && <PersonDetail me={me} id={Number(personId)} go={go} />}
       {page === '/registrations' && <Registrations me={me} />}
@@ -202,6 +204,7 @@ export function App() {
       {page === '/surveys' && <SurveyPage me={me} go={go} />}
       {page === '/surveys/manage' && <SurveyManage me={me} />}
       {/* --- slice B (end) --- */}
+      {page === '/analytics' && <AnalyticsPage me={me} go={go} />}
     </Shell>
   );
 }

@@ -30,22 +30,27 @@
 - Local dev on Windows: `php -S` hangs; `tools/php-dev-server.mjs` replaces it. PHPStan's parallel workers can hang:
   `--debug` runs it serially.
 - No production sweep yet ("production" before real students use it).
-<!-- slice B open (begin) -->
-- Slice B, after merging with slice A: pass slice A's "satisfaction survey still due" check to `HomeService`
-  (`$satisfactionPending` closure in `HomeController`); until then the home to-do leaves that task out.
-- Slice B migrations ran on MySQL 8.4 only here (no local MariaDB); check 0501, 0504, 0505 on MariaDB 10.11 before
-  the Exabytes upload. Support units in the survey are named as in ACMS (SARD, SRD, SLD, FAD, ISO): CPDC may want
-  their full names on screen.
-<!-- slice B open (end) -->
-
-- Slice A (ACMS port): the industry list is MSIC 2008's 21 sections, an assumption until CPDC sends the ACMS list.
-  The satisfaction table and My applications scroll inside their panel on phones (no page overflow). Students on
-  the short slice 2a internship see a "Complete placement form" notice.
+- ACMS port: migrations 0500-0510 ran on MySQL 8.4 here; CI runs them on MariaDB 10.11 too. The industry list is
+  MSIC 2008's 21 sections, an assumption until CPDC sends the ACMS list. Survey support units are named as in ACMS
+  (SARD, SRD, SLD, FAD, ISO): CPDC may want full names on screen.
+- Analytics reads every row on each load: fine for one university; add caching only if it gets slow.
 
 ## Next step
-Founder sets up the Render database and keys; then the lead checks sign-in and each module live.
+Founder checks the ACMS features live (as a student and as CPDC), then the "production" sweep before real students.
 
-## Done: slice A of the ACMS port, 2026-11-26 (branch claude/slice-a-placement-e0dfb9, merged)
+## Done: ACMS port, 2026-11-26 (slices A and B in parallel sessions, merged; slice C by the lead)
+- Slice C: `/analytics` for CPDC (KPI strip, readiness, internships, jobs funnel, skills/learning/survey/workshops,
+  faculty table, alumni outcomes, filters by faculty, programme, people, graduation year and Malaysia date range);
+  CSV reports Student readiness and Alumni outcomes plus links to the placement and survey CSVs, all audited; 360
+  view under `/people/:id` for students and alumni (audited); alumni tracker rows open it. Migration 0510
+  (`analytics.view`, `analytics.export`).
+- Merge: seed numbers of slice B's fake students moved to FAKE-S-3001+ (slice A used 2001+); home to-do asks for
+  the internship satisfaction survey after the internship ends; older e2e specs follow the /home landing page.
+- Checks: 342 PHPUnit, PHPStan level 8, PHPCS, ESLint, TypeScript, 70 Vitest, build, 14 Playwright tests (new
+  e2e/analytics.spec.ts at 1280px and 390px), gitleaks. Analytics and the 360 view looked at in a browser at both
+  widths (no page overflow).
+
+### Slice A (branch claude/slice-a-placement-e0dfb9)
 - Placement form on /logbook (Placement tab), change reason + old/new snapshot after submission, satisfaction survey
   (Survey tab); CPDC /internships gets Placements (filters, change history, Industry Visit CSV) and Satisfaction
   (per company, Industry Satisfaction CSV) tabs; jobs: extra details, state and specialization filters, Apply button,
@@ -54,7 +59,7 @@ Founder sets up the Render database and keys; then the lead checks sign-in and e
 - Checks: 300 PHPUnit tests, PHPStan 8, PHPCS, ESLint, tsc, build, vitest, 10 Playwright tests (new
   e2e/placement-jobs.spec.ts at 1280px and 390px), gitleaks.
 
-## Done: slice B of the ACMS port, 2026-11-26 (branch claude/slice-b-surveys-5fc760, merged)
+### Slice B (branch claude/slice-b-surveys-5fc760)
 - Home page for everyone (landing page): workshops with RSVP, to-do list, job applications, shortcuts.
 - Self-assessments: 1-5 rating style, required written reflections, semester, printable A4 report; CPDC trait
   averages per faculty and semester and audited reading of reflections; seeded Student Characteristics assessment.
@@ -84,11 +89,4 @@ Founder sets up the Render database and keys; then the lead checks sign-in and e
   cards on phones; page headings kept on load errors; exact current-menu match; "Assessment builder" label.
 - Checks: 272 PHPUnit tests, PHPStan level 8, ESLint, PHPCS, TypeScript, build, 5 Playwright specs, gitleaks.
 
-## Done: slice 1, 2026-11-25 (foundation)
-- Rebuild as React + TypeScript (Vite) + plain PHP 8.3 + MySQL 8, structure of sld-orientation. Firebase removed.
-- Google sign-in (server side, PKCE, `google_hosted_domains`, directory profile: matric/staff no, faculty, title).
-- LinkedIn: compulsory link for students and staff (onboarding gate), follow-QIU tick, profile URL, PDPA consent;
-  alumni-only LinkedIn sign-in; "Register as a QIU graduate" with CPDC approval and merge by matric number.
-- Career profile with LinkedIn PDF import; optional GitHub link; People, person detail, Alumni tracker (employment
-  rate, CSV, "make alumni" by matric list), Graduate sign-ups, Audit log; alumni job confirmation every 180 days.
-- Hosting files: `Dockerfile` + `render.yaml` (Render test copy), `deploy/exabytes/` and `docs/RELEASE.md`.
+Older rounds: docs/HISTORY.md.

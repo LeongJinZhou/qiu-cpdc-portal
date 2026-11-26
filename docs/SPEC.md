@@ -358,4 +358,39 @@ JSON schema rejects unknown keys and long values.
 Data (migrations 0501, 0504, 0505): `assessment.answer_style`, `assessment.reflection_prompts`,
 `assessment_attempt.reflection_answers/faculty/semester`, `survey_cycle`, `survey_response` (unique cycle + user),
 `cv_document.employer_sharing_consent_at`. JSON columns are validated in PHP (MariaDB keeps them as text).
+Home after the merge: the to-do asks for the post-internship satisfaction survey once the internship's end date has
+passed and until it is answered (`PlacementService::satisfactionDue`).
 <!-- slice B (end) -->
+
+## 15. Slice C: CPDC analytics and the 360 view (2026-11-26)
+Permissions (migration 0510): `analytics.view` and `analytics.export`, admin and superadmin only. Every number is
+computed on the server from the stored rows; nothing comes from the browser.
+
+1. `/analytics` (`GET /api/analytics/overview`). Filters: faculty (career profile, else directory department),
+   programme, people (everyone, students, alumni), graduation year, and a date range in Malaysia days (both ends
+   included) that narrows activity (applications, internships by start date, workshops, learning records, attempts,
+   interview sessions). Unknown filters are refused.
+2. KPI strip: active students and alumni, LinkedIn link rate of each, student onboarding rate, alumni employment rate
+   ((employed + self-employed + further study) / known status; unknown shown apart), internship placement rate
+   (students with an internship / students), job-offer rate (offered / satisfaction answers).
+3. Sections: career readiness (PDF import, CV built, CV sharing consent, skills rated); internships (placed, nature
+   of business, top companies, average and median allowance, unpaid, logbook on track = approved weeks out of weeks
+   due so far, waiting and returned weeks, satisfaction average, recommend rate); jobs (open jobs, applications per
+   stage, top employers with hires); skills, learning and activity (average per skill area from each person's latest
+   rating, certificates verified and waiting, self-assessment completion and trait averages, yearly survey response
+   rate and section means without N/A, interview sessions and score out of 5, published FYP projects, workshop
+   check-in rate for past workshops); a table per faculty; alumni outcomes (status totals, status per faculty and
+   graduation year, confirmation within `alumni_job_confirm_days` / overdue / never, alumni without LinkedIn with
+   links to their 360 view, network opt-ins, active mentors, mentor requests by status).
+4. Downloads (`GET /api/analytics/export?report=readiness|outcomes`, analytics.export): student readiness and alumni
+   outcomes with the same filters; the page also links the existing Industry Visit, Industry Satisfaction
+   (placement.manage) and yearly survey (survey.manage) CSVs. All CSVs escape formula cells, show Malaysia time and
+   are written to the audit log with the row count.
+5. 360 view (`GET /api/people/{id}/analytics`, analytics.view) under the profile on `/people/:id` for students and
+   alumni: readiness checklist, CV and sharing consent, internship and industry visit with logbook progress and
+   satisfaction, job applications, skills with the previous rating, self-assessments with written reflections,
+   learning records, career path steps, interview practice, FYP projects, workshops, yearly survey status; for alumni
+   the job confirmation history (overdue badge), network visibility, mentor status and matches. Private mentoring
+   messages are never read. Every opening is audited (`person.analytics_view`). The alumni tracker rows open it.
+
+No new tables; queries use the existing keys (`ix_career_profile_tracker` for the filters).
